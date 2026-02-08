@@ -3,8 +3,12 @@ using IDCardBD.Web.Models;
 using IDCardBD.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Authorization;
+using IDCardBD.Web.Models;
+
 namespace IDCardBD.Web.Controllers
 {
+    [Authorize]
     public class DesignController : Controller
     {
         private readonly ApplicationDbContext _context;

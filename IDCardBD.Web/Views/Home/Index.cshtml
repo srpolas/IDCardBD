@@ -1,65 +1,69 @@
-﻿@model IDCardBD.Web.ViewModels.DashboardViewModel
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Welcome to IDCardBD";
+    Layout = "_Layout";
 }
 
-<div class="row mb-2">
-    <div class="col-sm-6">
-        <h1 class="m-0">Dashboard</h1>
+<div class="container py-5">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h1 class="display-4 font-weight-bold">IDCardBD CMS <span class="text-primary">v1.0</span></h1>
+            <p class="lead text-muted">A complete solution for Student, Teacher, and Employee ID Card management, design, and printing.</p>
+            <div class="mt-4">
+                <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg px-4 mr-2">Login to CMS</a>
+                <a asp-controller="Account" asp-action="Register" class="btn btn-outline-secondary btn-lg px-4">Create Account</a>
+            </div>
+        </div>
+        <div class="col-md-6 text-center">
+            <i class="fas fa-id-card fa-10x text-primary shadow-sm p-4 rounded-circle bg-white"></i>
+        </div>
     </div>
-</div>
 
-<div class="row">
-    <!-- Total Students -->
-    <div class="col-lg-4 col-6">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>@Model.TotalStudents</h3>
-                <p>Total Students</p>
+    <hr class="my-5">
+
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="p-3 shadow-sm rounded h-100 bg-white">
+                <i class="fas fa-users fa-3x text-info mb-3"></i>
+                <h3>Identity Management</h3>
+                <p>Easily manage Students, Teachers, and Employees with specialized fields, profile pictures, and academic streams (Groups/Sections).</p>
             </div>
-            <div class="icon">
-                <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="p-3 shadow-sm rounded h-100 bg-white">
+                <i class="fas fa-paint-brush fa-3x text-warning mb-3"></i>
+                <h3>Design Center</h3>
+                <p>Create professional ID card templates. Upload custom backgrounds for Front and Back sides and activate them with one click.</p>
             </div>
-            <a asp-controller="Students" asp-action="Index" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="p-3 shadow-sm rounded h-100 bg-white">
+                <i class="fas fa-print fa-3x text-success mb-3"></i>
+                <h3>Print Queue</h3>
+                <p>Seamlessly track card processing from "Sent to Print" to "Ready for Delivery" with automated PDF generation.</p>
+            </div>
         </div>
     </div>
-    <!-- Total Employees -->
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>@Model.TotalEmployees</h3>
-                <p>Total Employees</p>
+
+    <div class="bg-light p-5 rounded mt-5">
+        <h2 class="text-center mb-4">User Roles & Instructions</h2>
+        <div class="row">
+            <div class="col-md-6 border-right">
+                <h4 class="text-info"><i class="fas fa-user-edit"></i> Data Entry User</h4>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Add/Edit Students, Teachers, and Employees.</li>
+                    <li><i class="fas fa-check text-success"></i> Upload profile pictures and manage academic info.</li>
+                    <li><i class="fas fa-check text-success"></i> Push multiple identities to the <b>Print Queue</b>.</li>
+                </ul>
             </div>
-            <div class="icon">
-                <i class="fas fa-user-tie"></i>
+            <div class="col-md-6 pl-md-4">
+                <h4 class="text-primary"><i class="fas fa-user-shield"></i> Administrator</h4>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Everything a Data Entry user can do.</li>
+                    <li><i class="fas fa-check text-success"></i> Manage <b>Classes, Sections, and Groups</b>.</li>
+                    <li><i class="fas fa-check text-success"></i> <b>Design Center</b>: Manage card templates.</li>
+                    <li><i class="fas fa-check text-success"></i> <b>Final Processing</b>: Mark cards as "Printed" or "Delivered".</li>
+                </ul>
             </div>
-            <a asp-controller="Employees" asp-action="Index" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
-    </div>
-    <!-- Total Teachers -->
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-purple" style="background-color: #6f42c1 !important; color: white !important;">
-            <div class="inner">
-                <h3>@Model.TotalTeachers</h3>
-                <p>Total Teachers</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-chalkboard-teacher"></i>
-            </div>
-            <a asp-controller="Teachers" asp-action="Index" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
-    </div>
-    <!-- Pending Prints -->
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-warning">
-            <div class="inner">
-                <h3>@Model.PendingPrints</h3>
-                <p>Pending Prints</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-print"></i>
-            </div>
-            <a asp-controller="Print" asp-action="Queue" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
 </div>

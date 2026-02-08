@@ -4,8 +4,12 @@ using IDCardBD.Web.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
+using Microsoft.AspNetCore.Authorization;
+using IDCardBD.Web.Models;
+
 namespace IDCardBD.Web.Controllers
 {
+    [Authorize]
     public class SectionsController : Controller
     {
         private readonly ApplicationDbContext _context;

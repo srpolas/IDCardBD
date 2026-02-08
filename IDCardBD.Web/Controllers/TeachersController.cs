@@ -4,8 +4,11 @@ using IDCardBD.Web.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace IDCardBD.Web.Controllers
 {
+    [Authorize]
     public class TeachersController : Controller
     {
         private readonly ApplicationDbContext _context;

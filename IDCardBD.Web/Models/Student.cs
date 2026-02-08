@@ -13,8 +13,17 @@ namespace IDCardBD.Web.Models
         [StringLength(100)]
         public string? Email { get; set; }
 
-        public string FathersName { get; set; } = string.Empty;
-        public string MothersName { get; set; } = string.Empty;
+        [Display(Name = "Date of Birth")]
+        [DataType(DataType.Date)]
+        public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Father's Name")]
+        public string? FathersName { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Mother's Name")]
+        public string? MothersName { get; set; }
 
         [Display(Name = "Class Name")]
         public int? ClassId { get; set; }
@@ -41,12 +50,6 @@ namespace IDCardBD.Web.Models
         [Required]
         [StringLength(20)]
         public string PhoneNumber { get; set; } = string.Empty;
-
-        [StringLength(100)]
-        public string? FatherName { get; set; }
-
-        [StringLength(100)]
-        public string? MotherName { get; set; }
 
         public string? Address { get; set; }
 

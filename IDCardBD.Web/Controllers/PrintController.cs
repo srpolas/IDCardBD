@@ -4,9 +4,11 @@ using IDCardBD.Web.Services;
 using IDCardBD.Web.ViewModels;
 using IDCardBD.Web.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace IDCardBD.Web.Controllers
 {
+    [Authorize]
     public class PrintController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -54,6 +56,7 @@ namespace IDCardBD.Web.Controllers
         public IActionResult Index() => RedirectToAction(nameof(Queue));
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStatus(int[] studentIds, int[] employeeIds, int[] teacherIds, PrintStatus baseStatus)
         {
             PrintStatus newStatus = baseStatus switch
