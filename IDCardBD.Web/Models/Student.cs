@@ -8,6 +8,10 @@ namespace IDCardBD.Web.Models
         [StringLength(10)]
         public string RollNumber { get; set; } = string.Empty;
 
+        [EmailAddress]
+        [StringLength(100)]
+        public string? Email { get; set; }
+
         public string FathersName { get; set; } = string.Empty;
         public string MothersName { get; set; } = string.Empty;
 

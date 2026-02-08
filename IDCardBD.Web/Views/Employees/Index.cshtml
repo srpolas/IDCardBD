@@ -19,9 +19,12 @@
                 <tr>
                     <th style="width: 10%">Photo</th>
                     <th style="width: 20%">Full Name</th>
-                    <th style="width: 15%">Code</th>
-                    <th>Designation</th>
-                    <th>Department</th>
+                    <th style="width: 10%">Code</th>
+                    <th style="width: 10%">Designation</th>
+                    <th style="width: 10%">Department</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Emergency</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -43,6 +46,9 @@
                         <td>@item.EmployeeCode</td>
                         <td>@item.Designation</td>
                         <td>@item.Department</td>
+                        <td>@item.Email</td>
+                        <td>@item.PhoneNumber</td>
+                        <td>@item.EmergencyContact</td>
                         <td class="project-actions text-right">
                             <a class="btn btn-info btn-sm" asp-action="Edit" asp-route-id="@item.Id">
                                 <i class="fas fa-pencil-alt"></i>
