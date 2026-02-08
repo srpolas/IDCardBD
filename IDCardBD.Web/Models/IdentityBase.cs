@@ -20,5 +20,7 @@ namespace IDCardBD.Web.Models
         public UserCategory Category { get; set; }
 
         public bool IsPrinted { get; set; }
+
+        public PrintStatus PrintStatus { get; set; } = PrintStatus.None;
     }
 }

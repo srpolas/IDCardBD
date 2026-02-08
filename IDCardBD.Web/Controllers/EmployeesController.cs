@@ -127,6 +127,25 @@ namespace IDCardBD.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendToPrint(int[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var employees = await _context.Employees.Where(e => ids.Contains(e.Id)).ToListAsync();
+            foreach (var employee in employees)
+            {
+                employee.PrintStatus = PrintStatus.SentToPrint;
+            }
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
         private bool EmployeeExists(int id)
         {
             return _context.Employees.Any(e => e.Id == id);

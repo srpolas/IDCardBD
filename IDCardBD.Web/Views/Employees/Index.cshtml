@@ -4,62 +4,123 @@
     ViewData["Title"] = "Employee List";
 }
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Employees</h3>
-        <div class="card-tools">
-            <a asp-action="Create" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Add New
-            </a>
+<form asp-action="SendToPrint" method="post" id="printForm">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Employees</h3>
+            <div class="card-tools">
+                <button type="submit" id="btnSendToPrint" class="btn btn-success btn-sm d-none">
+                    <i class="fas fa-print"></i> Send to Print (<span id="selectedCount">0</span>)
+                </button>
+                <a asp-action="Create" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add New
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped projects">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" id="selectAll">
+                                <label for="selectAll" class="custom-control-label"></label>
+                            </div>
+                        </th>
+                        <th style="width: 10%">Photo</th>
+                        <th style="width: 15%">Full Name</th>
+                        <th style="width: 10%">Code</th>
+                        <th style="width: 10%">Designation</th>
+                        <th style="width: 10%">Department</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                             <td>
+                                <div class="custom-control custom-checkbox">
+                                    <input class="custom-control-input item-checkbox" type="checkbox" name="ids" id="chk_@item.Id" value="@item.Id">
+                                    <label for="chk_@item.Id" class="custom-control-label"></label>
+                                </div>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.PhotoPath))
+                                {
+                                    <img src="@item.PhotoPath" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="User Image">
+                                }
+                                else
+                                {
+                                    <img src="~/dist/img/avatar.png" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="User Image">
+                                }
+                            </td>
+                            <td>@item.FullName</td>
+                            <td>@item.EmployeeCode</td>
+                            <td>@item.Designation</td>
+                            <td>@item.Department</td>
+                            <td>@item.Email</td>
+                            <td>@item.PhoneNumber</td>
+                            <td>
+                                @if (item.PrintStatus == IDCardBD.Web.Models.PrintStatus.None)
+                                {
+                                    <span class="badge badge-secondary">New</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-info">@item.PrintStatus</span>
+                                }
+                            </td>
+                            <td class="project-actions text-right">
+                                <a class="btn btn-info btn-sm" asp-action="Edit" asp-route-id="@item.Id">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@item.Id">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-striped projects">
-            <thead>
-                <tr>
-                    <th style="width: 10%">Photo</th>
-                    <th style="width: 20%">Full Name</th>
-                    <th style="width: 10%">Code</th>
-                    <th style="width: 10%">Designation</th>
-                    <th style="width: 10%">Department</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Emergency</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>
-                            @if (!string.IsNullOrEmpty(item.PhotoPath))
-                            {
-                                <img src="@item.PhotoPath" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="User Image">
-                            }
-                            else
-                            {
-                                <img src="~/dist/img/avatar.png" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="User Image">
-                            }
-                        </td>
-                        <td>@item.FullName</td>
-                        <td>@item.EmployeeCode</td>
-                        <td>@item.Designation</td>
-                        <td>@item.Department</td>
-                        <td>@item.Email</td>
-                        <td>@item.PhoneNumber</td>
-                        <td>@item.EmergencyContact</td>
-                        <td class="project-actions text-right">
-                            <a class="btn btn-info btn-sm" asp-action="Edit" asp-route-id="@item.Id">
-                                <i class="fas fa-pencil-alt"></i>
-                            </a>
-                            <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@item.Id">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const $selectAll = $('#selectAll');
+            const $itemCheckboxes = $('.item-checkbox');
+            const $btnSendToPrint = $('#btnSendToPrint');
+            const $selectedCount = $('#selectedCount');
+
+            function updateUI() {
+                const checkedCount = $('.item-checkbox:checked').length;
+                $selectedCount.text(checkedCount);
+                if (checkedCount > 0) {
+                    $btnSendToPrint.removeClass('d-none');
+                } else {
+                    $btnSendToPrint.addClass('d-none');
                 }
-            </tbody>
-        </table>
-    </div>
-</div>
+            }
+
+            $selectAll.on('change', function () {
+                $itemCheckboxes.prop('checked', this.checked);
+                updateUI();
+            });
+
+            $itemCheckboxes.on('change', function () {
+                updateUI();
+                if (!this.checked) {
+                    $selectAll.prop('checked', false);
+                } else if ($('.item-checkbox:checked').length === $itemCheckboxes.length) {
+                    $selectAll.prop('checked', true);
+                }
+            });
+        });
+    </script>
+}

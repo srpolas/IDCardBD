@@ -18,14 +18,60 @@ namespace IDCardBD.Web.Controllers
             _pdfService = pdfService;
         }
 
-        public async Task<IActionResult> Queue()
+        public async Task<IActionResult> Queue(PrintStatus status = PrintStatus.SentToPrint)
         {
-            var model = new PrintQueueViewModel
+            var students = await _context.Students.Where(s => s.PrintStatus == status).ToListAsync();
+            var employees = await _context.Employees.Where(e => e.PrintStatus == status).ToListAsync();
+
+            var model = new PrintDashboardViewModel
             {
-                Students = await _context.Students.Where(s => !s.IsPrinted).ToListAsync(),
-                Employees = await _context.Employees.Where(e => !e.IsPrinted).ToListAsync()
+                CurrentStatus = status,
+                Students = students,
+                Employees = employees,
+                SentToPrintCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.SentToPrint) + 
+                                   await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.SentToPrint),
+                ProcessingCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.Processing) +
+                                  await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.Processing),
+                PrintedCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.Printed) +
+                               await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.Printed),
+                ReadyForDeliveryCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.ReadyForDelivery) +
+                                        await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.ReadyForDelivery)
             };
+
             return View(model);
+        }
+
+        public IActionResult Index() => RedirectToAction(nameof(Queue));
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatus(int[] studentIds, int[] employeeIds, PrintStatus baseStatus)
+        {
+            PrintStatus newStatus = baseStatus switch
+            {
+                PrintStatus.SentToPrint => PrintStatus.Processing,
+                PrintStatus.Processing => PrintStatus.Printed,
+                PrintStatus.Printed => PrintStatus.ReadyForDelivery,
+                _ => baseStatus
+            };
+
+            if (newStatus != baseStatus)
+            {
+                if (studentIds != null && studentIds.Length > 0)
+                {
+                    var students = await _context.Students.Where(s => studentIds.Contains(s.Id)).ToListAsync();
+                    foreach (var s in students) s.PrintStatus = newStatus;
+                }
+
+                if (employeeIds != null && employeeIds.Length > 0)
+                {
+                    var employees = await _context.Employees.Where(e => employeeIds.Contains(e.Id)).ToListAsync();
+                    foreach (var e in employees) e.PrintStatus = newStatus;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Queue), new { status = baseStatus }); 
         }
 
         public async Task<IActionResult> Generate(int id, string type)
@@ -47,30 +93,6 @@ namespace IDCardBD.Web.Controllers
 
             var pdfBytes = _pdfService.GenerateIdCard(person, template);
             return File(pdfBytes, "application/pdf", $"{person.FullName}_ID.pdf");
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> MarkPrinted(int id, string type)
-        {
-             if (type == "Student")
-            {
-                var student = await _context.Students.FindAsync(id);
-                if (student != null) 
-                {
-                    student.IsPrinted = true;
-                    await _context.SaveChangesAsync();
-                }
-            }
-            else if (type == "Employee")
-            {
-                var employee = await _context.Employees.FindAsync(id);
-                if (employee != null) 
-                {
-                    employee.IsPrinted = true;
-                    await _context.SaveChangesAsync();
-                }
-            }
-            return RedirectToAction(nameof(Queue));
         }
     }
 }

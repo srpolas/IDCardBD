@@ -24,7 +24,8 @@ public class HomeController : Controller
         {
             TotalStudents = await _context.Students.CountAsync(),
             TotalEmployees = await _context.Employees.CountAsync(),
-            PendingPrints = await _context.Students.CountAsync(s => !s.IsPrinted) + await _context.Employees.CountAsync(e => !e.IsPrinted)
+            PendingPrints = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.SentToPrint) + 
+                            await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.SentToPrint)
         };
         return View(model);
     }

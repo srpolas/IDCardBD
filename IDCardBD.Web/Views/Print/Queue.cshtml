@@ -1,69 +1,207 @@
-@model IDCardBD.Web.ViewModels.PrintQueueViewModel
+@model IDCardBD.Web.ViewModels.PrintDashboardViewModel
 
 @{
     ViewData["Title"] = "Print Queue";
 }
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Pending Print Jobs</h3>
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@Model.SentToPrintCount</h3>
+                <p>Waiting for Process</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <a asp-action="Queue" asp-route-status="SentToPrint" class="small-box-footer">
+                View Queue <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Name</th>
-                    <th>ID / Roll</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in Model.Students)
-                {
-                    <tr>
-                        <td><span class="badge badge-info">Student</span></td>
-                        <td>@s.FullName</td>
-                        <td>@s.RollNumber</td>
-                        <td>
-                            <a asp-action="Generate" asp-route-id="@s.Id" asp-route-type="Student" class="btn btn-sm btn-primary" target="_blank">
-                                <i class="fas fa-file-pdf"></i> Generate PDF
-                            </a>
-                            <form asp-action="MarkPrinted" method="post" style="display:inline;">
-                                <input type="hidden" name="id" value="@s.Id" />
-                                <input type="hidden" name="type" value="Student" />
-                                <button type="submit" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check"></i> Mark Printed
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-                @foreach (var e in Model.Employees)
-                {
-                    <tr>
-                        <td><span class="badge badge-warning">Employee</span></td>
-                        <td>@e.FullName</td>
-                        <td>@e.EmployeeCode</td>
-                        <td>
-                            <a asp-action="Generate" asp-route-id="@e.Id" asp-route-type="Employee" class="btn btn-sm btn-primary" target="_blank">
-                                <i class="fas fa-file-pdf"></i> Generate PDF
-                            </a>
-                            <form asp-action="MarkPrinted" method="post" style="display:inline;">
-                                <input type="hidden" name="id" value="@e.Id" />
-                                <input type="hidden" name="type" value="Employee" />
-                                <button type="submit" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check"></i> Mark Printed
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        @if (!Model.Students.Any() && !Model.Employees.Any())
-        {
-            <div class="p-3 text-center text-muted">No pending print jobs.</div>
-        }
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>@Model.ProcessingCount</h3>
+                <p>In Processing</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-cog fa-spin"></i>
+            </div>
+            <a asp-action="Queue" asp-route-status="Processing" class="small-box-footer">
+                View Queue <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>@Model.PrintedCount</h3>
+                <p>Print Completed</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <a asp-action="Queue" asp-route-status="Printed" class="small-box-footer">
+                View Queue <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-primary">
+            <div class="inner">
+                <h3>@Model.ReadyForDeliveryCount</h3>
+                <p>Ready for Delivery</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-truck"></i>
+            </div>
+            <a asp-action="Queue" asp-route-status="ReadyForDelivery" class="small-box-footer">
+                View Queue <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
     </div>
 </div>
+
+<div class="card card-outline card-primary">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-list mr-1"></i>
+            Queue: @Model.CurrentStatus
+        </h3>
+        <div class="card-tools">
+            @if (Model.CurrentStatus != IDCardBD.Web.Models.PrintStatus.ReadyForDelivery)
+            {
+                <button type="button" class="btn btn-primary btn-sm btn-bulk-update d-none" onclick="submitBulkUpdate()">
+                    @switch (Model.CurrentStatus)
+                    {
+                        case IDCardBD.Web.Models.PrintStatus.SentToPrint:
+                            <text><i class="fas fa-play mr-1"></i> Start Processing</text>
+                            break;
+                        case IDCardBD.Web.Models.PrintStatus.Processing:
+                            <text><i class="fas fa-check mr-1"></i> Mark as Printed</text>
+                            break;
+                        case IDCardBD.Web.Models.PrintStatus.Printed:
+                            <text><i class="fas fa-box mr-1"></i> Mark Ready for Delivery</text>
+                            break;
+                    }
+                    (<span id="selectedCount">0</span>)
+                </button>
+            }
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <form id="bulkForm" asp-action="UpdateStatus" method="post">
+            <input type="hidden" name="baseStatus" value="@Model.CurrentStatus" />
+            <table class="table table-striped projects mt-0">
+                <thead>
+                    <tr>
+                        <th style="width: 5%">
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" id="selectAll">
+                                <label for="selectAll" class="custom-control-label"></label>
+                            </div>
+                        </th>
+                        <th>Type</th>
+                        <th>Full Name</th>
+                        <th>Code/Roll</th>
+                        <th>Department/Grade</th>
+                        <th>QR Code</th>
+                        <th style="width: 15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Model.Students)
+                    {
+                        <tr>
+                            <td>
+                                <div class="custom-control custom-checkbox">
+                                    <input class="custom-control-input item-checkbox" type="checkbox" name="studentIds" id="std_@student.Id" value="@student.Id">
+                                    <label for="std_@student.Id" class="custom-control-label"></label>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-info">Student</span></td>
+                            <td>@student.FullName</td>
+                            <td>@student.RollNumber</td>
+                            <td>@student.Grade</td>
+                            <td>@student.QRCode</td>
+                            <td>
+                                <a href="@Url.Action("Generate", new { id = student.Id, type = "Student" })" class="btn btn-default btn-xs" target="_blank">
+                                    <i class="fas fa-file-pdf"></i> Preview
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var employee in Model.Employees)
+                    {
+                        <tr>
+                            <td>
+                                <div class="custom-control custom-checkbox">
+                                    <input class="custom-control-input item-checkbox" type="checkbox" name="employeeIds" id="emp_@employee.Id" value="@employee.Id">
+                                    <label for="emp_@employee.Id" class="custom-control-label"></label>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-success">Employee</span></td>
+                            <td>@employee.FullName</td>
+                            <td>@employee.EmployeeCode</td>
+                            <td>@employee.Department</td>
+                            <td>@employee.QRCode</td>
+                            <td>
+                                <a href="@Url.Action("Generate", new { id = employee.Id, type = "Employee" })" class="btn btn-default btn-xs" target="_blank">
+                                    <i class="fas fa-file-pdf"></i> Preview
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Students.Any() && !Model.Employees.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center p-4 text-muted">No items found in this queue state.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const $selectAll = $('#selectAll');
+            const $itemCheckboxes = $('.item-checkbox');
+            const $btnBulkUpdate = $('.btn-bulk-update');
+            const $selectedCountDisplay = $('#selectedCount');
+
+            function updateUI() {
+                const checkedCount = $('.item-checkbox:checked').length;
+                $selectedCountDisplay.text(checkedCount);
+                if (checkedCount > 0) {
+                    $btnBulkUpdate.removeClass('d-none');
+                } else {
+                    $btnBulkUpdate.addClass('d-none');
+                }
+            }
+
+            $selectAll.on('change', function () {
+                $itemCheckboxes.prop('checked', this.checked);
+                updateUI();
+            });
+
+            $itemCheckboxes.on('change', function () {
+                updateUI();
+                if (!this.checked) {
+                    $selectAll.prop('checked', false);
+                } else if ($('.item-checkbox:checked').length === $itemCheckboxes.length) {
+                    $selectAll.prop('checked', true);
+                }
+            });
+        });
+
+        function submitBulkUpdate() {
+            if (confirm('Are you sure you want to move selected items to the next status?')) {
+                $('#bulkForm').submit();
+            }
+        }
+    </script>
+}
