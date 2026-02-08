@@ -69,19 +69,19 @@
                              <input asp-for="RollNumber" class="form-control">
                              <span asp-validation-for="RollNumber" class="text-danger"></span>
                         </div>
-                        <div class="col-md-6 form-group">
-                             <label asp-for="Grade"></label>
-                             <input asp-for="Grade" class="form-control">
-                             <span asp-validation-for="Grade" class="text-danger"></span>
-                        </div>
+                         <div class="col-md-6 form-group">
+                              <label asp-for="ClassId"></label>
+                              <select asp-for="ClassId" class="form-control" asp-items="ViewBag.ClassId"></select>
+                              <span asp-validation-for="ClassId" class="text-danger"></span>
+                         </div>
                     </div>
 
                     <div class="row">
-                         <div class="col-md-6 form-group">
-                             <label asp-for="Section"></label>
-                             <input asp-for="Section" class="form-control">
-                             <span asp-validation-for="Section" class="text-danger"></span>
-                        </div>
+                          <div class="col-md-6 form-group">
+                              <label asp-for="SectionId"></label>
+                              <select asp-for="SectionId" class="form-control" asp-items="ViewBag.SectionId"></select>
+                              <span asp-validation-for="SectionId" class="text-danger"></span>
+                         </div>
                         <div class="col-md-6 form-group">
                              <label asp-for="BloodGroup"></label>
                              <input asp-for="BloodGroup" class="form-control">
@@ -122,6 +122,25 @@
     <script>
         $(document).ready(function () {
             bsCustomFileInput.init();
+
+            $('#ClassId').change(function () {
+                var classId = $(this).val();
+                var $sectionSelect = $('#SectionId');
+                
+                $sectionSelect.empty();
+                $sectionSelect.append('<option value="">-- Select Section --</option>');
+
+                if (classId) {
+                    $.getJSON('@Url.Action("GetSectionsByClass", "Sections")', { classId: classId }, function (data) {
+                        $.each(data, function (i, item) {
+                            $sectionSelect.append($('<option/>', {
+                                value: item.id,
+                                text: item.name
+                            }));
+                        });
+                    });
+                }
+            });
         });
     </script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

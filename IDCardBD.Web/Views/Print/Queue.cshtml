@@ -123,7 +123,7 @@
                             <td><span class="badge badge-info">Student</span></td>
                             <td>@student.FullName</td>
                             <td>@student.RollNumber</td>
-                            <td>@student.Grade</td>
+                            <td>@(student.Class?.Name ?? "N/A")</td>
                             <td>@student.QRCode</td>
                             <td>
                                 <a href="@Url.Action("Generate", new { id = student.Id, type = "Student" })" class="btn btn-default btn-xs" target="_blank">
@@ -153,7 +153,28 @@
                             </td>
                         </tr>
                     }
-                    @if (!Model.Students.Any() && !Model.Employees.Any())
+                    @foreach (var teacher in Model.Teachers)
+                    {
+                        <tr>
+                            <td>
+                                <div class="custom-control custom-checkbox">
+                                    <input class="custom-control-input item-checkbox" type="checkbox" name="teacherIds" id="tea_@teacher.Id" value="@teacher.Id">
+                                    <label for="tea_@teacher.Id" class="custom-control-label"></label>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-purple" style="background-color: #6f42c1; color: white;">Teacher</span></td>
+                            <td>@teacher.FullName</td>
+                            <td>@teacher.TeacherCode</td>
+                            <td>@teacher.Department</td>
+                            <td>@teacher.QRCode</td>
+                            <td>
+                                <a href="@Url.Action("Generate", new { id = teacher.Id, type = "Teacher" })" class="btn btn-default btn-xs" target="_blank">
+                                    <i class="fas fa-file-pdf"></i> Preview
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Students.Any() && !Model.Employees.Any() && !Model.Teachers.Any())
                     {
                         <tr>
                             <td colspan="7" class="text-center p-4 text-muted">No items found in this queue state.</td>

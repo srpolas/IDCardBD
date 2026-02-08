@@ -4,6 +4,7 @@ using IDCardBD.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IDCardBD.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260208193852_AddClassAndSection")]
+    partial class AddClassAndSection
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -180,9 +183,6 @@ namespace IDCardBD.Web.Migrations
                     b.Property<int>("Category")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ClassId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -202,6 +202,11 @@ namespace IDCardBD.Web.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Grade")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("GuardianName")
                         .IsRequired()
@@ -238,14 +243,11 @@ namespace IDCardBD.Web.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<int?>("SectionId")
-                        .HasColumnType("int");
+                    b.Property<string>("Section")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("SectionId");
 
                     b.ToTable("Students");
                 });
@@ -329,21 +331,6 @@ namespace IDCardBD.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Class");
-                });
-
-            modelBuilder.Entity("IDCardBD.Web.Models.Student", b =>
-                {
-                    b.HasOne("IDCardBD.Web.Models.SchoolClass", "Class")
-                        .WithMany()
-                        .HasForeignKey("ClassId");
-
-                    b.HasOne("IDCardBD.Web.Models.Section", "Section")
-                        .WithMany()
-                        .HasForeignKey("SectionId");
-
-                    b.Navigation("Class");
-
-                    b.Navigation("Section");
                 });
 
             modelBuilder.Entity("IDCardBD.Web.Models.SchoolClass", b =>

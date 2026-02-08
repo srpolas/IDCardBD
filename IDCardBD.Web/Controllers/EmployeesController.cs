@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using IDCardBD.Web.Data;
 using IDCardBD.Web.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IDCardBD.Web.Controllers
 {
@@ -16,9 +17,66 @@ namespace IDCardBD.Web.Controllers
             _environment = environment;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchString, string designation, string department, string sortOrder)
         {
-            return View(await _context.Employees.ToListAsync());
+            ViewBag.CurrentSort = sortOrder;
+            ViewBag.NameSortParm = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewBag.CodeSortParm = sortOrder == "Code" ? "code_desc" : "Code";
+            ViewBag.DesignationSortParm = sortOrder == "Designation" ? "des_desc" : "Designation";
+            ViewBag.DepartmentSortParm = sortOrder == "Department" ? "dept_desc" : "Department";
+
+            var query = _context.Employees.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(e => e.FullName.Contains(searchString) || e.EmployeeCode.Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(designation))
+            {
+                query = query.Where(e => e.Designation == designation);
+            }
+
+            if (!string.IsNullOrEmpty(department))
+            {
+                query = query.Where(e => e.Department == department);
+            }
+
+            switch (sortOrder)
+            {
+                case "name_desc":
+                    query = query.OrderByDescending(e => e.FullName);
+                    break;
+                case "Code":
+                    query = query.OrderBy(e => e.EmployeeCode);
+                    break;
+                case "code_desc":
+                    query = query.OrderByDescending(e => e.EmployeeCode);
+                    break;
+                case "Designation":
+                    query = query.OrderBy(e => e.Designation);
+                    break;
+                case "des_desc":
+                    query = query.OrderByDescending(e => e.Designation);
+                    break;
+                case "Department":
+                    query = query.OrderBy(e => e.Department);
+                    break;
+                case "dept_desc":
+                    query = query.OrderByDescending(e => e.Department);
+                    break;
+                default:
+                    query = query.OrderBy(e => e.FullName);
+                    break;
+            }
+
+            ViewBag.Designations = new SelectList(await _context.Employees.Select(e => e.Designation).Distinct().ToListAsync());
+            ViewBag.Departments = new SelectList(await _context.Employees.Select(e => e.Department).Distinct().ToListAsync());
+            ViewBag.CurrentSearch = searchString;
+            ViewBag.CurrentDesignation = designation;
+            ViewBag.CurrentDepartment = department;
+
+            return View(await query.ToListAsync());
         }
 
         public IActionResult Create()

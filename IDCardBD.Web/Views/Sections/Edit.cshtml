@@ -1,0 +1,34 @@
+@model IDCardBD.Web.Models.Section
+
+@{
+    ViewData["Title"] = "Edit Section";
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">Edit Section</h3>
+            </div>
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div class="card-body">
+                    <div class="form-group">
+                        <label asp-for="ClassId"></label>
+                        <select asp-for="ClassId" class="form-control" asp-items="ViewBag.Classes"></select>
+                        <span asp-validation-for="ClassId" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Name"></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="card-footer text-right">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-info">Update Section</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

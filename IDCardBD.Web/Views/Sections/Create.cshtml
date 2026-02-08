@@ -1,0 +1,35 @@
+@model IDCardBD.Web.Models.Section
+
+@{
+    ViewData["Title"] = "Add Section";
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">New Section</h3>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label asp-for="ClassId"></label>
+                        <select asp-for="ClassId" class="form-control" asp-items="ViewBag.Classes">
+                            <option value="">-- Select Class --</option>
+                        </select>
+                        <span asp-validation-for="ClassId" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Name"></label>
+                        <input asp-for="Name" class="form-control" placeholder="Enter section name (e.g. A, B, Science)" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="card-footer text-right">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Section</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -12,5 +12,6 @@ namespace IDCardBD.Web.ViewModels
         public PrintStatus CurrentStatus { get; set; }
         public List<Student> Students { get; set; } = new List<Student>();
         public List<Employee> Employees { get; set; } = new List<Employee>();
+        public List<Teacher> Teachers { get; set; } = new List<Teacher>();
     }
 }

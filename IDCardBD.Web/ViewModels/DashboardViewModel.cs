@@ -5,6 +5,7 @@ namespace IDCardBD.Web.ViewModels
     {
         public int TotalStudents { get; set; }
         public int TotalEmployees { get; set; }
+        public int TotalTeachers { get; set; }
         public int PendingPrints { get; set; }
     }
 }

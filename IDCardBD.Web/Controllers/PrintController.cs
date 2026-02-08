@@ -20,22 +20,32 @@ namespace IDCardBD.Web.Controllers
 
         public async Task<IActionResult> Queue(PrintStatus status = PrintStatus.SentToPrint)
         {
-            var students = await _context.Students.Where(s => s.PrintStatus == status).ToListAsync();
+            var students = await _context.Students
+                .Include(s => s.Class)
+                .Include(s => s.Section)
+                .Where(s => s.PrintStatus == status)
+                .ToListAsync();
             var employees = await _context.Employees.Where(e => e.PrintStatus == status).ToListAsync();
+            var teachers = await _context.Teachers.Where(t => t.PrintStatus == status).ToListAsync();
 
             var model = new PrintDashboardViewModel
             {
                 CurrentStatus = status,
                 Students = students,
                 Employees = employees,
+                Teachers = teachers,
                 SentToPrintCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.SentToPrint) + 
-                                   await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.SentToPrint),
+                                   await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.SentToPrint) +
+                                   await _context.Teachers.CountAsync(t => t.PrintStatus == PrintStatus.SentToPrint),
                 ProcessingCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.Processing) +
-                                  await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.Processing),
+                                  await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.Processing) +
+                                  await _context.Teachers.CountAsync(t => t.PrintStatus == PrintStatus.Processing),
                 PrintedCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.Printed) +
-                               await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.Printed),
+                               await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.Printed) +
+                               await _context.Teachers.CountAsync(t => t.PrintStatus == PrintStatus.Printed),
                 ReadyForDeliveryCount = await _context.Students.CountAsync(s => s.PrintStatus == PrintStatus.ReadyForDelivery) +
-                                        await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.ReadyForDelivery)
+                                        await _context.Employees.CountAsync(e => e.PrintStatus == PrintStatus.ReadyForDelivery) +
+                                        await _context.Teachers.CountAsync(t => t.PrintStatus == PrintStatus.ReadyForDelivery)
             };
 
             return View(model);
@@ -44,7 +54,7 @@ namespace IDCardBD.Web.Controllers
         public IActionResult Index() => RedirectToAction(nameof(Queue));
 
         [HttpPost]
-        public async Task<IActionResult> UpdateStatus(int[] studentIds, int[] employeeIds, PrintStatus baseStatus)
+        public async Task<IActionResult> UpdateStatus(int[] studentIds, int[] employeeIds, int[] teacherIds, PrintStatus baseStatus)
         {
             PrintStatus newStatus = baseStatus switch
             {
@@ -68,6 +78,12 @@ namespace IDCardBD.Web.Controllers
                     foreach (var e in employees) e.PrintStatus = newStatus;
                 }
 
+                if (teacherIds != null && teacherIds.Length > 0)
+                {
+                    var teachers = await _context.Teachers.Where(t => teacherIds.Contains(t.Id)).ToListAsync();
+                    foreach (var t in teachers) t.PrintStatus = newStatus;
+                }
+
                 await _context.SaveChangesAsync();
             }
 
@@ -79,7 +95,10 @@ namespace IDCardBD.Web.Controllers
             IdentityBase? person = null;
             if (type == "Student")
             {
-                person = await _context.Students.FindAsync(id);
+                person = await _context.Students
+                    .Include(s => s.Class)
+                    .Include(s => s.Section)
+                    .FirstOrDefaultAsync(s => s.Id == id);
             }
             else if (type == "Employee")
             {

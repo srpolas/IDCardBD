@@ -4,6 +4,28 @@
     ViewData["Title"] = "Student List";
 }
 
+<form asp-action="Index" method="get" class="mb-3">
+    <div class="row">
+        <div class="col-md-4">
+            <input type="text" name="searchString" value="@ViewBag.CurrentSearch" class="form-control" placeholder="Search by name or roll..." />
+        </div>
+        <div class="col-md-2">
+            <select name="classId" id="FilterClassId" class="form-control" asp-items="ViewBag.Classes">
+                <option value="">-- All Classes --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="sectionId" id="FilterSectionId" class="form-control" asp-items="ViewBag.Sections">
+                <option value="">-- All Sections --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+            <a asp-action="Index" class="btn btn-secondary">Clear</a>
+        </div>
+    </div>
+</form>
+
 <form asp-action="SendToPrint" method="post" id="printForm">
     <div class="card">
         <div class="card-header">
@@ -28,9 +50,26 @@
                             </div>
                         </th>
                         <th style="width: 10%">Photo</th>
-                        <th style="width: 20%">Full Name</th>
-                        <th style="width: 10%">Roll</th>
-                        <th>Grade</th>
+                        <th style="width: 20%">
+                            <a asp-action="Index" asp-route-sortOrder="@ViewBag.NameSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-classId="@ViewBag.CurrentClassId" asp-route-sectionId="@ViewBag.CurrentSectionId">
+                                Full Name <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th style="width: 10%">
+                            <a asp-action="Index" asp-route-sortOrder="@ViewBag.RollSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-classId="@ViewBag.CurrentClassId" asp-route-sectionId="@ViewBag.CurrentSectionId">
+                                Roll <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th style="width: 15%">
+                            <a asp-action="Index" asp-route-sortOrder="@ViewBag.ClassSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-classId="@ViewBag.CurrentClassId" asp-route-sectionId="@ViewBag.CurrentSectionId">
+                                Class Name <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th style="width: 10%">
+                            <a asp-action="Index" asp-route-sortOrder="@ViewBag.SectionSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-classId="@ViewBag.CurrentClassId" asp-route-sectionId="@ViewBag.CurrentSectionId">
+                                Section Name <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Status</th>
@@ -59,7 +98,8 @@
                             </td>
                             <td>@item.FullName</td>
                             <td>@item.RollNumber</td>
-                            <td>@item.Grade</td>
+                            <td>@item.Class?.Name</td>
+                <td>@item.Section?.Name</td>
                             <td>@item.Email</td>
                             <td>@item.PhoneNumber</td>
                             <td>
@@ -117,6 +157,25 @@
                     $selectAll.prop('checked', false);
                 } else if ($('.student-checkbox:checked').length === $studentCheckboxes.length) {
                     $selectAll.prop('checked', true);
+                }
+            });
+
+            $('#FilterClassId').change(function () {
+                var classId = $(this).val();
+                var $sectionSelect = $('#FilterSectionId');
+                
+                $sectionSelect.empty();
+                $sectionSelect.append('<option value="">-- All Sections --</option>');
+
+                if (classId) {
+                    $.getJSON('@Url.Action("GetSectionsByClass", "Sections")', { classId: classId }, function (data) {
+                        $.each(data, function (i, item) {
+                            $sectionSelect.append($('<option/>', {
+                                value: item.id,
+                                text: item.name
+                            }));
+                        });
+                    });
                 }
             });
         });

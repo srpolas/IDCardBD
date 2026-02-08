@@ -11,6 +11,9 @@ namespace IDCardBD.Web.Data
 
         public DbSet<Student> Students { get; set; }
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<Teacher> Teachers { get; set; }
+        public DbSet<SchoolClass> Classes { get; set; }
+        public DbSet<Section> Sections { get; set; }
         public DbSet<CardTemplate> CardTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -19,8 +19,11 @@
                     <dt class="col-sm-4">Roll Number</dt>
                     <dd class="col-sm-8">@Model.RollNumber</dd>
 
-                    <dt class="col-sm-4">Grade</dt>
-                    <dd class="col-sm-8">@Model.Grade</dd>
+                    <dt class="col-sm-4">Class Name</dt>
+                    <dd class="col-sm-8">@(Model.Class?.Name ?? "N/A")</dd>
+
+                    <dt class="col-sm-4">Section Name</dt>
+                    <dd class="col-sm-8">@(Model.Section?.Name ?? "N/A")</dd>
                 </dl>
                 
                 <form asp-action="Delete">

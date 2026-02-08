@@ -50,7 +50,8 @@ namespace IDCardBD.Web.Services
                             if (person is Student student)
                             {
                                 column.Item().Text($"Roll: {student.RollNumber}");
-                                column.Item().Text($"Grade: {student.Grade}");
+                                 column.Item().Text($"Class: {student.Class?.Name ?? "N/A"}");
+                                 column.Item().Text($"Section: {student.Section?.Name ?? "N/A"}");
                             }
                             else if (person is Employee employee)
                             {

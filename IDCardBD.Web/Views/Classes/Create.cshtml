@@ -1,0 +1,28 @@
+@model IDCardBD.Web.Models.SchoolClass
+
+@{
+    ViewData["Title"] = "Add Class";
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">New Class</h3>
+            </div>
+            <form asp-action="Create" method="post">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label asp-for="Name"></label>
+                        <input asp-for="Name" class="form-control" placeholder="Enter class name (e.g. Class 10)" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="card-footer text-right">
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Class</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

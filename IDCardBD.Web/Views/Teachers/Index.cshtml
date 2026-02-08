@@ -1,7 +1,7 @@
-@model IEnumerable<IDCardBD.Web.Models.Employee>
+@model IEnumerable<IDCardBD.Web.Models.Teacher>
 
 @{
-    ViewData["Title"] = "Employee List";
+    ViewData["Title"] = "Teacher List";
 }
 
 <form asp-action="Index" method="get" class="mb-3">
@@ -29,13 +29,13 @@
 <form asp-action="SendToPrint" method="post" id="printForm">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Employees</h3>
+            <h3 class="card-title">Teachers</h3>
             <div class="card-tools">
                 <button type="submit" id="btnSendToPrint" class="btn btn-success btn-sm d-none">
                     <i class="fas fa-print"></i> Send to Print (<span id="selectedCount">0</span>)
                 </button>
                 <a asp-action="Create" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus"></i> Add New
+                    <i class="fas fa-plus"></i> Add Teacher
                 </a>
             </div>
         </div>
@@ -43,35 +43,33 @@
             <table class="table table-striped projects">
                 <thead>
                     <tr>
-                        <th style="width: 5%">
+                        <th style="width: 1%">
                             <div class="custom-control custom-checkbox">
                                 <input class="custom-control-input" type="checkbox" id="selectAll">
                                 <label for="selectAll" class="custom-control-label"></label>
                             </div>
                         </th>
-                        <th style="width: 10%">Photo</th>
-                        <th style="width: 15%">
+                        <th>Photo</th>
+                        <th>
                             <a asp-action="Index" asp-route-sortOrder="@ViewBag.NameSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-designation="@ViewBag.CurrentDesignation" asp-route-department="@ViewBag.CurrentDepartment">
-                                Full Name <i class="fas fa-sort"></i>
+                                Name <i class="fas fa-sort"></i>
                             </a>
                         </th>
-                        <th style="width: 10%">
+                        <th>
                             <a asp-action="Index" asp-route-sortOrder="@ViewBag.CodeSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-designation="@ViewBag.CurrentDesignation" asp-route-department="@ViewBag.CurrentDepartment">
                                 Code <i class="fas fa-sort"></i>
                             </a>
                         </th>
-                        <th style="width: 15%">
+                        <th>
                             <a asp-action="Index" asp-route-sortOrder="@ViewBag.DesignationSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-designation="@ViewBag.CurrentDesignation" asp-route-department="@ViewBag.CurrentDepartment">
                                 Designation <i class="fas fa-sort"></i>
                             </a>
                         </th>
-                        <th style="width: 15%">
+                        <th>
                             <a asp-action="Index" asp-route-sortOrder="@ViewBag.DepartmentSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-designation="@ViewBag.CurrentDesignation" asp-route-department="@ViewBag.CurrentDepartment">
                                 Department <i class="fas fa-sort"></i>
                             </a>
                         </th>
-                        <th>Email</th>
-                        <th>Phone</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -80,7 +78,7 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                             <td>
+                            <td>
                                 <div class="custom-control custom-checkbox">
                                     <input class="custom-control-input item-checkbox" type="checkbox" name="ids" id="chk_@item.Id" value="@item.Id">
                                     <label for="chk_@item.Id" class="custom-control-label"></label>
@@ -89,35 +87,23 @@
                             <td>
                                 @if (!string.IsNullOrEmpty(item.PhotoPath))
                                 {
-                                    <img src="@item.PhotoPath" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="User Image">
-                                }
-                                else
-                                {
-                                    <img src="~/dist/img/avatar.png" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="User Image">
+                                    <img src="@item.PhotoPath" class="img-circle img-size-32 mr-2" alt="Avatar">
                                 }
                             </td>
                             <td>@item.FullName</td>
-                            <td>@item.EmployeeCode</td>
+                            <td>@item.TeacherCode</td>
                             <td>@item.Designation</td>
                             <td>@item.Department</td>
-                            <td>@item.Email</td>
-                            <td>@item.PhoneNumber</td>
-                            <td>
-                                @if (item.PrintStatus == IDCardBD.Web.Models.PrintStatus.None)
-                                {
-                                    <span class="badge badge-secondary">New</span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-info">@item.PrintStatus</span>
-                                }
-                            </td>
+                            <td>@item.PrintStatus</td>
                             <td class="project-actions text-right">
+                                <a class="btn btn-primary btn-sm" asp-action="Details" asp-route-id="@item.Id">
+                                    <i class="fas fa-folder"></i> View
+                                </a>
                                 <a class="btn btn-info btn-sm" asp-action="Edit" asp-route-id="@item.Id">
-                                    <i class="fas fa-pencil-alt"></i>
+                                    <i class="fas fa-pencil-alt"></i> Edit
                                 </a>
                                 <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@item.Id">
-                                    <i class="fas fa-trash"></i>
+                                    <i class="fas fa-trash"></i> Delete
                                 </a>
                             </td>
                         </tr>
@@ -134,11 +120,11 @@
             const $selectAll = $('#selectAll');
             const $itemCheckboxes = $('.item-checkbox');
             const $btnSendToPrint = $('#btnSendToPrint');
-            const $selectedCount = $('#selectedCount');
+            const $selectedCountDisplay = $('#selectedCount');
 
             function updateUI() {
                 const checkedCount = $('.item-checkbox:checked').length;
-                $selectedCount.text(checkedCount);
+                $selectedCountDisplay.text(checkedCount);
                 if (checkedCount > 0) {
                     $btnSendToPrint.removeClass('d-none');
                 } else {

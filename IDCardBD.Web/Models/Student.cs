@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IDCardBD.Web.Models
 {
@@ -15,12 +16,17 @@ namespace IDCardBD.Web.Models
         public string FathersName { get; set; } = string.Empty;
         public string MothersName { get; set; } = string.Empty;
 
-        [Required]
-        [StringLength(20)]
-        public string Grade { get; set; } = string.Empty;
+        [Display(Name = "Class Name")]
+        public int? ClassId { get; set; }
 
-        [StringLength(10)]
-        public string? Section { get; set; }
+        [ForeignKey("ClassId")]
+        public SchoolClass? Class { get; set; }
+
+        [Display(Name = "Section Name")]
+        public int? SectionId { get; set; }
+
+        [ForeignKey("SectionId")]
+        public Section? Section { get; set; }
 
         [Required]
         [StringLength(100)]

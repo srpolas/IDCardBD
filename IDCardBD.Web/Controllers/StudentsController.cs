@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using IDCardBD.Web.Data;
 using IDCardBD.Web.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace IDCardBD.Web.Controllers
 {
@@ -16,13 +17,75 @@ namespace IDCardBD.Web.Controllers
             _environment = environment;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchString, int? classId, int? sectionId, string sortOrder)
         {
-            return View(await _context.Students.ToListAsync());
+            ViewBag.CurrentSort = sortOrder;
+            ViewBag.NameSortParm = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewBag.RollSortParm = sortOrder == "Roll" ? "roll_desc" : "Roll";
+            ViewBag.ClassSortParm = sortOrder == "Class" ? "class_desc" : "Class";
+            ViewBag.SectionSortParm = sortOrder == "Section" ? "section_desc" : "Section";
+
+            var query = _context.Students
+                .Include(s => s.Class)
+                .Include(s => s.Section)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(s => s.FullName.Contains(searchString) || s.RollNumber.Contains(searchString));
+            }
+
+            if (classId.HasValue)
+            {
+                query = query.Where(s => s.ClassId == classId.Value);
+            }
+
+            if (sectionId.HasValue)
+            {
+                query = query.Where(s => s.SectionId == sectionId.Value);
+            }
+
+            switch (sortOrder)
+            {
+                case "name_desc":
+                    query = query.OrderByDescending(s => s.FullName);
+                    break;
+                case "Roll":
+                    query = query.OrderBy(s => s.RollNumber);
+                    break;
+                case "roll_desc":
+                    query = query.OrderByDescending(s => s.RollNumber);
+                    break;
+                case "Class":
+                    query = query.OrderBy(s => s.Class.Name);
+                    break;
+                case "class_desc":
+                    query = query.OrderByDescending(s => s.Class.Name);
+                    break;
+                case "Section":
+                    query = query.OrderBy(s => s.Section.Name);
+                    break;
+                case "section_desc":
+                    query = query.OrderByDescending(s => s.Section.Name);
+                    break;
+                default:
+                    query = query.OrderBy(s => s.FullName);
+                    break;
+            }
+
+            ViewBag.Classes = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name");
+            ViewBag.Sections = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name");
+            ViewBag.CurrentSearch = searchString;
+            ViewBag.CurrentClassId = classId;
+            ViewBag.CurrentSectionId = sectionId;
+
+            return View(await query.ToListAsync());
         }
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name");
+            ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name");
             return View();
         }
 
@@ -53,6 +116,8 @@ namespace IDCardBD.Web.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
+            ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
             return View(student);
         }
 
@@ -61,6 +126,9 @@ namespace IDCardBD.Web.Controllers
             if (id == null) return NotFound();
             var student = await _context.Students.FindAsync(id);
             if (student == null) return NotFound();
+            
+            ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
+            ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
             return View(student);
         }
 
@@ -114,6 +182,8 @@ namespace IDCardBD.Web.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
+            ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
             return View(student);
         }
 
