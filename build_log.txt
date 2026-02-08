@@ -1,0 +1,21 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+J:\Projects\IDCardBD\IDCardBD.Web\Program.cs(27,5): error CS1061: 'WebApplication' does not contain a definition for 'MapStaticAssets' and no accessible extension method 'MapStaticAssets' accepting a first argument of type 'WebApplication' could be found (are you missing a using directive or an assembly reference?) [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Program.cs(32,6): error CS1061: 'ControllerActionEndpointConventionBuilder' does not contain a definition for 'WithStaticAssets' and no accessible extension method 'WithStaticAssets' accepting a first argument of type 'ControllerActionEndpointConventionBuilder' could be found (are you missing a using directive or an assembly reference?) [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Controllers\PrintController.cs(33,35): warning CS8600: Converting null literal or possible null value to non-nullable type. [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Controllers\PrintController.cs(36,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Controllers\PrintController.cs(40,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Services\PdfService.cs(44,40): error CS1061: 'object' does not contain a definition for 'DrawRectangle' and no accessible extension method 'DrawRectangle' accepting a first argument of type 'object' could be found (are you missing a using directive or an assembly reference?) [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+
+Build FAILED.
+
+J:\Projects\IDCardBD\IDCardBD.Web\Controllers\PrintController.cs(33,35): warning CS8600: Converting null literal or possible null value to non-nullable type. [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Controllers\PrintController.cs(36,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Controllers\PrintController.cs(40,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Program.cs(27,5): error CS1061: 'WebApplication' does not contain a definition for 'MapStaticAssets' and no accessible extension method 'MapStaticAssets' accepting a first argument of type 'WebApplication' could be found (are you missing a using directive or an assembly reference?) [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Program.cs(32,6): error CS1061: 'ControllerActionEndpointConventionBuilder' does not contain a definition for 'WithStaticAssets' and no accessible extension method 'WithStaticAssets' accepting a first argument of type 'ControllerActionEndpointConventionBuilder' could be found (are you missing a using directive or an assembly reference?) [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+J:\Projects\IDCardBD\IDCardBD.Web\Services\PdfService.cs(44,40): error CS1061: 'object' does not contain a definition for 'DrawRectangle' and no accessible extension method 'DrawRectangle' accepting a first argument of type 'object' could be found (are you missing a using directive or an assembly reference?) [J:\Projects\IDCardBD\IDCardBD.Web\IDCardBD.Web.csproj]
+    3 Warning(s)
+    3 Error(s)
+
+Time Elapsed 00:00:01.30

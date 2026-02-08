@@ -1,0 +1,46 @@
+ROLE: Full-Stack .NET Developer
+PROJECT: ID Card CMS (Education & Corporate)
+TECH STACK: .NET 8, SQL Server, EF Core, AdminLTE 3 (Bootstrap), QuestPDF.
+
+1. DATABASE STRUCTURE (SQL SERVER)
+- Use Entity Framework Core Code-First.
+- Create an abstract 'IdentityBase' class:
+    - Common: Id (Int, PK), FullName, PhotoPath, QRCode, CreatedDate, Category (Enum).
+- Create 'Student' class (inherits IdentityBase):
+    - Fields: RollNumber, Grade, Section, GuardianName, Phone Number, FatherName, MotherName, Address, BloodGroup.
+- Create 'Employee' class (inherits IdentityBase):
+    - Fields: EmployeeCode, Designation, Department, BloodGroup.
+- Create 'CardTemplate' table:
+    - Fields: Name, FrontBgPath, BackBgPath, IsActive (Bool).
+
+2. ADMIN DASHBOARD (ADMINLTE)
+- Integrate AdminLTE 3 Layout into the .NET 8 project (Shared/_Layout.cshtml).
+- Sidebar Navigation:
+    - Dashboard (Stats: Total Students, Total Employees, Pending Prints).
+    - Design Center (Upload Front/Back backgrounds).
+    - Student Management (CRUD).
+    - Employee Management (CRUD).
+    - Print Queue (List of records ready for card generation).
+
+3. MOBILE-FRIENDLY DATA ENTRY
+- Forms: Use Bootstrap 'Card' components for clear spacing on mobile.
+- Camera: Implement a JavaScript-interop camera module.
+    - Path: /Capture/Camera
+    - Function: Capture image from phone camera, convert to Base64/Blob, and preview instantly.
+- Responsiveness: Ensure all tables use 'table-responsive' classes to be scrollable on small screens.
+
+4. DUAL-SIDE DESIGN LOGIC
+- Create a configuration page where the Admin uploads two distinct images (Front/Back).
+- Logic: When generating the ID, the system must overlay dynamic text (Name, ID) and the Profile Photo onto the Front background, and static/institutional info on the Back background.
+
+5. PRINTING ENGINE
+- Library: QuestPDF.
+- Output: Generate a single PDF with two pages (85.6mm x 53.98mm).
+- Page 1: Dynamic Front Design.
+- Page 2: Dynamic Back Design.
+- DPI: Ensure 300 DPI rendering for crisp text on PVC cards.
+
+6. TECHNICAL CONSTRAINTS
+- Use Dependency Injection for Database Context.
+- Use AutoMapper for DTO to Model conversion.
+- Implement a 'PrintStatus' flag in the DB to track which IDs have already been printed.

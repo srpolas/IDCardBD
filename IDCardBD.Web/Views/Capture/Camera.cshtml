@@ -1,0 +1,89 @@
+@{
+    ViewData["Title"] = "Camera Capture";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Camera Capture</h3>
+            </div>
+            <div class="card-body text-center">
+                <div id="camera-container" class="mb-3">
+                    <video id="video" width="100%" autoplay playsinline style="background: black;"></video>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                </div>
+                
+                <div id="preview-container" class="mb-3" style="display:none;">
+                    <img id="photo" alt="Captured Photo" class="img-fluid img-thumbnail" />
+                </div>
+
+                <button id="start-camera" class="btn btn-primary btn-block">
+                    <i class="fas fa-camera"></i> Start Camera
+                </button>
+                <button id="capture-btn" class="btn btn-success btn-block" style="display:none;">
+                    <i class="fas fa-shutter-speed"></i> Capture
+                </button>
+                <button id="retake-btn" class="btn btn-warning btn-block" style="display:none;">
+                    <i class="fas fa-redo"></i> Retake
+                </button>
+                
+                <hr />
+                <textarea id="base64-output" class="form-control" rows="3" placeholder="Base64 output..." readonly></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const photo = document.getElementById('photo');
+            const startBtn = document.getElementById('start-camera');
+            const captureBtn = document.getElementById('capture-btn');
+            const retakeBtn = document.getElementById('retake-btn');
+            const previewContainer = document.getElementById('preview-container');
+            const base64Output = document.getElementById('base64-output');
+            let stream = null;
+
+            startBtn.addEventListener('click', async () => {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    video.srcObject = stream;
+                    startBtn.style.display = 'none';
+                    captureBtn.style.display = 'block';
+                    video.style.display = 'block';
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    alert("Error accessing camera. Please ensure permissions are granted.");
+                }
+            });
+
+            captureBtn.addEventListener('click', () => {
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+
+                const data = canvas.toDataURL('image/png');
+                photo.setAttribute('src', data);
+                base64Output.value = data;
+
+                video.style.display = 'none';
+                previewContainer.style.display = 'block';
+                captureBtn.style.display = 'none';
+                retakeBtn.style.display = 'block';
+            });
+
+            retakeBtn.addEventListener('click', () => {
+                video.style.display = 'block';
+                previewContainer.style.display = 'none';
+                captureBtn.style.display = 'block';
+                retakeBtn.style.display = 'none';
+                base64Output.value = '';
+            });
+        });
+    </script>
+}

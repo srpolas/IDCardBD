@@ -1,0 +1,69 @@
+@model IDCardBD.Web.ViewModels.PrintQueueViewModel
+
+@{
+    ViewData["Title"] = "Print Queue";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Pending Print Jobs</h3>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>ID / Roll</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Students)
+                {
+                    <tr>
+                        <td><span class="badge badge-info">Student</span></td>
+                        <td>@s.FullName</td>
+                        <td>@s.RollNumber</td>
+                        <td>
+                            <a asp-action="Generate" asp-route-id="@s.Id" asp-route-type="Student" class="btn btn-sm btn-primary" target="_blank">
+                                <i class="fas fa-file-pdf"></i> Generate PDF
+                            </a>
+                            <form asp-action="MarkPrinted" method="post" style="display:inline;">
+                                <input type="hidden" name="id" value="@s.Id" />
+                                <input type="hidden" name="type" value="Student" />
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check"></i> Mark Printed
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @foreach (var e in Model.Employees)
+                {
+                    <tr>
+                        <td><span class="badge badge-warning">Employee</span></td>
+                        <td>@e.FullName</td>
+                        <td>@e.EmployeeCode</td>
+                        <td>
+                            <a asp-action="Generate" asp-route-id="@e.Id" asp-route-type="Employee" class="btn btn-sm btn-primary" target="_blank">
+                                <i class="fas fa-file-pdf"></i> Generate PDF
+                            </a>
+                            <form asp-action="MarkPrinted" method="post" style="display:inline;">
+                                <input type="hidden" name="id" value="@e.Id" />
+                                <input type="hidden" name="type" value="Employee" />
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check"></i> Mark Printed
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Students.Any() && !Model.Employees.Any())
+        {
+            <div class="p-3 text-center text-muted">No pending print jobs.</div>
+        }
+    </div>
+</div>

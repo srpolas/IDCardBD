@@ -1,0 +1,74 @@
+@model IDCardBD.Web.Models.CardTemplate
+
+@{
+    ViewData["Title"] = "Edit Template";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Edit Template</h3>
+            </div>
+            <form asp-action="Edit" enctype="multipart/form-data">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="IsActive" />
+                
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    
+                    <div class="form-group">
+                        <label asp-for="Name">Template Name</label>
+                        <input asp-for="Name" class="form-control">
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Current Front Image</label>
+                        <div>
+                             <img src="@Model.FrontBgPath" class="img-thumbnail" style="max-height: 100px;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Change Front Image</label>
+                        <div class="custom-file">
+                            <input type="file" name="frontImage" class="custom-file-input" id="frontImage">
+                            <label class="custom-file-label" for="frontImage">Choose file</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Current Back Image</label>
+                        <div>
+                             <img src="@Model.BackBgPath" class="img-thumbnail" style="max-height: 100px;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Change Back Image</label>
+                        <div class="custom-file">
+                            <input type="file" name="backImage" class="custom-file-input" id="backImage">
+                            <label class="custom-file-label" for="backImage">Choose file</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a asp-action="Index" class="btn btn-default float-right">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bs-custom-file-input/dist/bs-custom-file-input.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            bsCustomFileInput.init();
+        });
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
