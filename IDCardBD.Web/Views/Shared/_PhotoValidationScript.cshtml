@@ -1,0 +1,34 @@
+<script>
+    $(document).ready(function () {
+        $('.custom-file-input').on('change', function () {
+            var file = this.files[0];
+            var $errorSpan = $('#photoError');
+            var $submitBtn = $('button[type="submit"]');
+            var $label = $(this).next('.custom-file-label');
+            
+            if (file) {
+                // Update label
+                var fileName = file.name;
+                $label.addClass("selected").html(fileName);
+
+                var fileSize = file.size / 1024; // in KB
+                var fileExtension = fileName.split('.').pop().toLowerCase();
+                
+                if (fileSize > 100 || fileExtension !== 'jpg') {
+                    $errorSpan.show();
+                    $submitBtn.prop('disabled', true);
+                    $(this).addClass('is-invalid');
+                } else {
+                    $errorSpan.hide();
+                    $submitBtn.prop('disabled', false);
+                    $(this).removeClass('is-invalid');
+                }
+            } else {
+                $label.removeClass("selected").html("Choose file");
+                $errorSpan.hide();
+                $submitBtn.prop('disabled', false);
+                $(this).removeClass('is-invalid');
+            }
+        });
+    });
+</script>

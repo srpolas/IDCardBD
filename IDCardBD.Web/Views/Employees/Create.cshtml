@@ -15,11 +15,12 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     
                     <div class="form-group">
-                        <label>Profile Picture</label>
+                        <label>Profile Picture <small class="text-muted">(40mm x 50mm, 300 DPI, Max 100KB, .jpg only)</small></label>
                         <div class="custom-file">
-                             <input type="file" name="photo" class="custom-file-input" id="customFile">
+                             <input type="file" name="photo" class="custom-file-input" id="customFile" accept=".jpg">
                              <label class="custom-file-label" for="customFile">Choose file</label>
                         </div>
+                        <span id="photoError" class="text-danger small" style="display:none;">Photo size exceeds 100KB or is not a .jpg file.</span>
                     </div>
 
                     <div class="row">
@@ -91,5 +92,6 @@
             bsCustomFileInput.init();
         });
     </script>
+    @{await Html.RenderPartialAsync("_PhotoValidationScript");}
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

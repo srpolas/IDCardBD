@@ -112,29 +112,40 @@ namespace IDCardBD.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Student student, IFormFile photo)
         {
-            if (ModelState.IsValid)
-            {
                 if (photo != null)
                 {
-                     string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                     if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                     
-                     string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                     using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
-                     {
-                         await photo.CopyToAsync(stream);
-                     }
-                     student.PhotoPath = "/uploads/profiles/" + fileName;
+                    if (photo.Length > 100 * 1024)
+                    {
+                        ModelState.AddModelError("photo", "Photo size must be within 100KB.");
+                    }
+                    else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
+                    {
+                        ModelState.AddModelError("photo", "Only .jpg files are allowed.");
+                    }
+                    else
+                    {
+                        string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
+                        if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+                        
+                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                        using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                        {
+                            await photo.CopyToAsync(stream);
+                        }
+                        student.PhotoPath = "/uploads/profiles/" + fileName;
+                    }
                 }
 
-                student.Category = UserCategory.Student;
-                // Generate logic for QR code if needed
-                student.QRCode = student.RollNumber; 
-                
-                _context.Add(student);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
+                if (ModelState.IsValid)
+                {
+                    student.Category = UserCategory.Student;
+                    // Generate logic for QR code if needed
+                    student.QRCode = student.RollNumber; 
+                    
+                    _context.Add(student);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
             ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
             ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
             ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name", student.GroupId);
@@ -173,15 +184,26 @@ namespace IDCardBD.Web.Controllers
                      
                      if (photo != null)
                      {
-                         string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                         if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                         
-                         string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                         using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                         if (photo.Length > 100 * 1024)
                          {
-                             await photo.CopyToAsync(stream);
+                             ModelState.AddModelError("photo", "Photo size must be within 100KB.");
                          }
-                         student.PhotoPath = "/uploads/profiles/" + fileName;
+                         else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
+                         {
+                             ModelState.AddModelError("photo", "Only .jpg files are allowed.");
+                         }
+                         else
+                         {
+                             string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
+                             if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+                             
+                             string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                             using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                             {
+                                 await photo.CopyToAsync(stream);
+                             }
+                             student.PhotoPath = "/uploads/profiles/" + fileName;
+                         }
                      }
                      else 
                      {

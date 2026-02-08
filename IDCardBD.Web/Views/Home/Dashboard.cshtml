@@ -11,7 +11,7 @@
 
 <div class="row">
     <!-- Total Students -->
-    <div class="col-lg-4 col-6">
+    <div class="col-lg-3 col-6">
         <div class="small-box bg-info">
             <div class="inner">
                 <h3>@Model.TotalStudents</h3>
@@ -21,19 +21,6 @@
                 <i class="fas fa-user-graduate"></i>
             </div>
             <a asp-controller="Students" asp-action="Index" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-        </div>
-    </div>
-    <!-- Total Employees -->
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>@Model.TotalEmployees</h3>
-                <p>Total Employees</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-user-tie"></i>
-            </div>
-            <a asp-controller="Employees" asp-action="Index" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
     <!-- Total Teachers -->
@@ -49,6 +36,19 @@
             <a asp-controller="Teachers" asp-action="Index" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
         </div>
     </div>
+    <!-- Total Employees -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>@Model.TotalEmployees</h3>
+                <p>Total Employees</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <a asp-controller="Employees" asp-action="Index" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
     <!-- Pending Prints -->
     <div class="col-lg-3 col-6">
         <div class="small-box bg-warning">
@@ -60,6 +60,72 @@
                 <i class="fas fa-print"></i>
             </div>
             <a asp-controller="Print" asp-action="Queue" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header border-transparent">
+                <h3 class="card-title">Recent Activity (Added Today)</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table m-0">
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Time Added</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentActivities.Any())
+                            {
+                                @foreach (var activity in Model.RecentActivities)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(activity.PhotoPath))
+                                            {
+                                                <img src="@activity.PhotoPath" class="img-circle" style="width: 35px; height: 35px; object-fit: cover;" alt="User Image">
+                                            }
+                                            else
+                                            {
+                                                <img src="~/dist/img/avatar.png" class="img-circle" style="width: 35px; height: 35px; object-fit: cover;" alt="User Image">
+                                            }
+                                        </td>
+                                        <td>@activity.Name</td>
+                                        <td>
+                                            <span class="badge @(activity.Category == "Student" ? "badge-info" : activity.Category == "Teacher" ? "badge-primary" : "badge-success")">
+                                                @activity.Category
+                                            </span>
+                                        </td>
+                                        <td>@activity.AddedDate.ToString("hh:mm tt")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No new records added today.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer clearfix">
+                <a asp-controller="Students" asp-action="Create" class="btn btn-sm btn-info float-left">Place New Student</a>
+                <a asp-controller="Students" asp-action="Index" class="btn btn-sm btn-secondary float-right">View All</a>
+            </div>
         </div>
     </div>
 </div>

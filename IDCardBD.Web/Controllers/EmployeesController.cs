@@ -91,28 +91,39 @@ namespace IDCardBD.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Employee employee, IFormFile photo)
         {
-            if (ModelState.IsValid)
-            {
-               if (photo != null)
+                if (photo != null)
                 {
-                     string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                     if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                     
-                     string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                     using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
-                     {
-                         await photo.CopyToAsync(stream);
-                     }
-                     employee.PhotoPath = "/uploads/profiles/" + fileName;
+                    if (photo.Length > 100 * 1024)
+                    {
+                        ModelState.AddModelError("photo", "Photo size must be within 100KB.");
+                    }
+                    else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
+                    {
+                        ModelState.AddModelError("photo", "Only .jpg files are allowed.");
+                    }
+                    else
+                    {
+                        string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
+                        if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+                        
+                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                        using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                        {
+                            await photo.CopyToAsync(stream);
+                        }
+                        employee.PhotoPath = "/uploads/profiles/" + fileName;
+                    }
                 }
 
-                employee.Category = UserCategory.Employee;
-                employee.QRCode = employee.EmployeeCode;
+                if (ModelState.IsValid)
+                {
+                    employee.Category = UserCategory.Employee;
+                    employee.QRCode = employee.EmployeeCode;
 
-                _context.Add(employee);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
+                    _context.Add(employee);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
             return View(employee);
         }
 
@@ -138,15 +149,26 @@ namespace IDCardBD.Web.Controllers
                 {
                     if (photo != null)
                      {
-                         string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                         if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                         
-                         string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                         using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                         if (photo.Length > 100 * 1024)
                          {
-                             await photo.CopyToAsync(stream);
+                             ModelState.AddModelError("photo", "Photo size must be within 100KB.");
                          }
-                         employee.PhotoPath = "/uploads/profiles/" + fileName;
+                         else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
+                         {
+                             ModelState.AddModelError("photo", "Only .jpg files are allowed.");
+                         }
+                         else
+                         {
+                             string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
+                             if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+                             
+                             string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                             using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                             {
+                                 await photo.CopyToAsync(stream);
+                             }
+                             employee.PhotoPath = "/uploads/profiles/" + fileName;
+                         }
                      }
                      else 
                      {

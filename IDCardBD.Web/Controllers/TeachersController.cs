@@ -91,28 +91,39 @@ namespace IDCardBD.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Teacher teacher, IFormFile photo)
         {
-            if (ModelState.IsValid)
-            {
                 if (photo != null)
                 {
-                    string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                    if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-
-                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                    using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                    if (photo.Length > 100 * 1024)
                     {
-                        await photo.CopyToAsync(stream);
+                        ModelState.AddModelError("photo", "Photo size must be within 100KB.");
                     }
-                    teacher.PhotoPath = "/uploads/profiles/" + fileName;
+                    else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
+                    {
+                        ModelState.AddModelError("photo", "Only .jpg files are allowed.");
+                    }
+                    else
+                    {
+                        string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
+                        if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+
+                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                        using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                        {
+                            await photo.CopyToAsync(stream);
+                        }
+                        teacher.PhotoPath = "/uploads/profiles/" + fileName;
+                    }
                 }
 
-                teacher.Category = UserCategory.Teacher;
-                teacher.QRCode = teacher.TeacherCode;
+                if (ModelState.IsValid)
+                {
+                    teacher.Category = UserCategory.Teacher;
+                    teacher.QRCode = teacher.TeacherCode;
 
-                _context.Add(teacher);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
+                    _context.Add(teacher);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
             return View(teacher);
         }
 
@@ -138,15 +149,26 @@ namespace IDCardBD.Web.Controllers
                 {
                     if (photo != null)
                     {
-                        string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                        if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-
-                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                        using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                        if (photo.Length > 100 * 1024)
                         {
-                            await photo.CopyToAsync(stream);
+                            ModelState.AddModelError("photo", "Photo size must be within 100KB.");
                         }
-                        teacher.PhotoPath = "/uploads/profiles/" + fileName;
+                        else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
+                        {
+                            ModelState.AddModelError("photo", "Only .jpg files are allowed.");
+                        }
+                        else
+                        {
+                            string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
+                            if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+
+                            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
+                            using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
+                            {
+                                await photo.CopyToAsync(stream);
+                            }
+                            teacher.PhotoPath = "/uploads/profiles/" + fileName;
+                        }
                     }
                     else
                     {
