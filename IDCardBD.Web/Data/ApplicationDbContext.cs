@@ -14,6 +14,7 @@ namespace IDCardBD.Web.Data
         public DbSet<Teacher> Teachers { get; set; }
         public DbSet<SchoolClass> Classes { get; set; }
         public DbSet<Section> Sections { get; set; }
+        public DbSet<AcademicGroup> AcademicGroups { get; set; }
         public DbSet<CardTemplate> CardTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -17,17 +17,19 @@ namespace IDCardBD.Web.Controllers
             _environment = environment;
         }
 
-        public async Task<IActionResult> Index(string searchString, int? classId, int? sectionId, string sortOrder)
+        public async Task<IActionResult> Index(string searchString, int? classId, int? sectionId, int? groupId, string sortOrder)
         {
             ViewBag.CurrentSort = sortOrder;
             ViewBag.NameSortParm = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
             ViewBag.RollSortParm = sortOrder == "Roll" ? "roll_desc" : "Roll";
             ViewBag.ClassSortParm = sortOrder == "Class" ? "class_desc" : "Class";
             ViewBag.SectionSortParm = sortOrder == "Section" ? "section_desc" : "Section";
+            ViewBag.GroupSortParm = sortOrder == "Group" ? "group_desc" : "Group";
 
             var query = _context.Students
                 .Include(s => s.Class)
                 .Include(s => s.Section)
+                .Include(s => s.Group)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchString))
@@ -43,6 +45,11 @@ namespace IDCardBD.Web.Controllers
             if (sectionId.HasValue)
             {
                 query = query.Where(s => s.SectionId == sectionId.Value);
+            }
+
+            if (groupId.HasValue)
+            {
+                query = query.Where(s => s.GroupId == groupId.Value);
             }
 
             switch (sortOrder)
@@ -68,6 +75,12 @@ namespace IDCardBD.Web.Controllers
                 case "section_desc":
                     query = query.OrderByDescending(s => s.Section.Name);
                     break;
+                case "Group":
+                    query = query.OrderBy(s => s.Group.Name);
+                    break;
+                case "group_desc":
+                    query = query.OrderByDescending(s => s.Group.Name);
+                    break;
                 default:
                     query = query.OrderBy(s => s.FullName);
                     break;
@@ -75,9 +88,11 @@ namespace IDCardBD.Web.Controllers
 
             ViewBag.Classes = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name");
             ViewBag.Sections = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name");
+            ViewBag.Groups = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name");
             ViewBag.CurrentSearch = searchString;
             ViewBag.CurrentClassId = classId;
             ViewBag.CurrentSectionId = sectionId;
+            ViewBag.CurrentGroupId = groupId;
 
             return View(await query.ToListAsync());
         }
@@ -86,6 +101,7 @@ namespace IDCardBD.Web.Controllers
         {
             ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name");
             ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name");
+            ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name");
             return View();
         }
 
@@ -118,6 +134,7 @@ namespace IDCardBD.Web.Controllers
             }
             ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
             ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
+            ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name", student.GroupId);
             return View(student);
         }
 
@@ -129,6 +146,7 @@ namespace IDCardBD.Web.Controllers
             
             ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
             ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
+            ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name", student.GroupId);
             return View(student);
         }
 
@@ -184,6 +202,7 @@ namespace IDCardBD.Web.Controllers
             }
             ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
             ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
+            ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name", student.GroupId);
             return View(student);
         }
 

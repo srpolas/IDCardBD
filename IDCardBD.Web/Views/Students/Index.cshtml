@@ -19,6 +19,11 @@
                 <option value="">-- All Sections --</option>
             </select>
         </div>
+        <div class="col-md-2">
+            <select name="groupId" id="FilterGroupId" class="form-control" asp-items="ViewBag.Groups">
+                <option value="">-- All Groups --</option>
+            </select>
+        </div>
         <div class="col-md-4">
             <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
             <a asp-action="Index" class="btn btn-secondary">Clear</a>
@@ -66,8 +71,13 @@
                             </a>
                         </th>
                         <th style="width: 10%">
-                            <a asp-action="Index" asp-route-sortOrder="@ViewBag.SectionSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-classId="@ViewBag.CurrentClassId" asp-route-sectionId="@ViewBag.CurrentSectionId">
-                                Section Name <i class="fas fa-sort"></i>
+                            <a asp-action="Index" asp-route-sortOrder="@ViewBag.SectionSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-classId="@ViewBag.CurrentClassId" asp-route-sectionId="@ViewBag.CurrentSectionId" asp-route-groupId="@ViewBag.CurrentGroupId">
+                                Section <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th style="width: 10%">
+                            <a asp-action="Index" asp-route-sortOrder="@ViewBag.GroupSortParm" asp-route-searchString="@ViewBag.CurrentSearch" asp-route-classId="@ViewBag.CurrentClassId" asp-route-sectionId="@ViewBag.CurrentSectionId" asp-route-groupId="@ViewBag.CurrentGroupId">
+                                Group <i class="fas fa-sort"></i>
                             </a>
                         </th>
                         <th>Email</th>
@@ -100,6 +110,7 @@
                             <td>@item.RollNumber</td>
                             <td>@item.Class?.Name</td>
                 <td>@item.Section?.Name</td>
+                <td>@item.Group?.Name</td>
                             <td>@item.Email</td>
                             <td>@item.PhoneNumber</td>
                             <td>
@@ -163,14 +174,27 @@
             $('#FilterClassId').change(function () {
                 var classId = $(this).val();
                 var $sectionSelect = $('#FilterSectionId');
+                var $groupSelect = $('#FilterGroupId');
                 
                 $sectionSelect.empty();
                 $sectionSelect.append('<option value="">-- All Sections --</option>');
+
+                $groupSelect.empty();
+                $groupSelect.append('<option value="">-- All Groups --</option>');
 
                 if (classId) {
                     $.getJSON('@Url.Action("GetSectionsByClass", "Sections")', { classId: classId }, function (data) {
                         $.each(data, function (i, item) {
                             $sectionSelect.append($('<option/>', {
+                                value: item.id,
+                                text: item.name
+                            }));
+                        });
+                    });
+
+                    $.getJSON('@Url.Action("GetGroupsByClass", "AcademicGroups")', { classId: classId }, function (data) {
+                        $.each(data, function (i, item) {
+                            $groupSelect.append($('<option/>', {
                                 value: item.id,
                                 text: item.name
                             }));

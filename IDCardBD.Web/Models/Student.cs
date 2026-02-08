@@ -28,6 +28,12 @@ namespace IDCardBD.Web.Models
         [ForeignKey("SectionId")]
         public Section? Section { get; set; }
 
+        [Display(Name = "Academic Group")]
+        public int? GroupId { get; set; }
+
+        [ForeignKey("GroupId")]
+        public AcademicGroup? Group { get; set; }
+
         [Required]
         [StringLength(100)]
         public string GuardianName { get; set; } = string.Empty;
