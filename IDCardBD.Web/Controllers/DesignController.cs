@@ -156,6 +156,46 @@ namespace IDCardBD.Web.Controllers
             return View(model);
         }
 
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var template = await _context.CardTemplates
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (template == null) return NotFound();
+
+            return View(template);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var template = await _context.CardTemplates.FindAsync(id);
+            if (template != null)
+            {
+                // Delete physical files
+                if (!string.IsNullOrEmpty(template.FrontBgPath))
+                {
+                    var frontPath = Path.Combine(_environment.WebRootPath, template.FrontBgPath.TrimStart('/'));
+                    if (System.IO.File.Exists(frontPath)) System.IO.File.Exists(frontPath); // System.IO.File.Delete(frontPath)
+                    
+                    // Fixed: actually use Delete
+                    try { if (System.IO.File.Exists(frontPath)) System.IO.File.Delete(frontPath); } catch { }
+                }
+
+                if (!string.IsNullOrEmpty(template.BackBgPath))
+                {
+                    var backPath = Path.Combine(_environment.WebRootPath, template.BackBgPath.TrimStart('/'));
+                    try { if (System.IO.File.Exists(backPath)) System.IO.File.Delete(backPath); } catch { }
+                }
+
+                _context.CardTemplates.Remove(template);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
         private bool CardTemplateExists(int id)
         {
             return _context.CardTemplates.Any(e => e.Id == id);

@@ -1,0 +1,33 @@
+@model IDCardBD.Web.Models.CardTemplate
+
+@{
+    ViewData["Title"] = "Delete Template";
+}
+
+<div class="card card-danger">
+    <div class="card-header">
+        <h3 class="card-title">Delete Card Template</h3>
+    </div>
+    <div class="card-body">
+        <p>Are you sure you want to delete this template? This will also remove the uploaded background images.</p>
+        <dl class="row">
+            <dt class="col-sm-4">Template Name</dt>
+            <dd class="col-sm-8">@Model.Name</dd>
+            <dt class="col-sm-4">Front Preview</dt>
+            <dd class="col-sm-8">
+                <img src="@Model.FrontBgPath" class="img-thumbnail" style="max-height: 100px;" alt="Front Preview" />
+            </dd>
+            <dt class="col-sm-4">Back Preview</dt>
+            <dd class="col-sm-8">
+                <img src="@Model.BackBgPath" class="img-thumbnail" style="max-height: 100px;" alt="Back Preview" />
+            </dd>
+        </dl>
+    </div>
+    <div class="card-footer">
+        <form asp-action="Delete">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
