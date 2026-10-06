@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 using Microsoft.AspNetCore.Authorization;
+using IDCardBD.Web.Services;
 
 namespace IDCardBD.Web.Controllers
 {
@@ -12,12 +13,12 @@ namespace IDCardBD.Web.Controllers
     public class TeachersController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment;
+        private readonly IPhotoService _photoService;
 
-        public TeachersController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public TeachersController(ApplicationDbContext context, IPhotoService photoService)
         {
             _context = context;
-            _environment = environment;
+            _photoService = photoService;
         }
 
         public async Task<IActionResult> Index(string searchString, string designation, string department, string sortOrder)
@@ -89,41 +90,22 @@ namespace IDCardBD.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Teacher teacher, IFormFile photo)
+        public async Task<IActionResult> Create(Teacher teacher, IFormFile? photo)
         {
-                if (photo != null)
-                {
-                    if (photo.Length > 100 * 1024)
-                    {
-                        ModelState.AddModelError("photo", "Photo size must be within 100KB.");
-                    }
-                    else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
-                    {
-                        ModelState.AddModelError("photo", "Only .jpg files are allowed.");
-                    }
-                    else
-                    {
-                        string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                        if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
+            var photoResult = await _photoService.SaveProfilePhotoAsync(photo);
+            if (photoResult.Error is { } photoError)
+                ModelState.AddModelError("photo", photoError);
 
-                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                        using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
-                        {
-                            await photo.CopyToAsync(stream);
-                        }
-                        teacher.PhotoPath = "/uploads/profiles/" + fileName;
-                    }
-                }
+            if (ModelState.IsValid)
+            {
+                teacher.Category = UserCategory.Teacher;
+                teacher.QRCode = teacher.TeacherCode;
+                teacher.PhotoPath = photoResult.RelativePath;
 
-                if (ModelState.IsValid)
-                {
-                    teacher.Category = UserCategory.Teacher;
-                    teacher.QRCode = teacher.TeacherCode;
-
-                    _context.Add(teacher);
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
+                _context.Add(teacher);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
             return View(teacher);
         }
 
@@ -137,56 +119,48 @@ namespace IDCardBD.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Teacher teacher, IFormFile photo)
+        public async Task<IActionResult> Edit(int id, Teacher teacher, IFormFile? photo)
         {
             if (id != teacher.Id) return NotFound();
 
+            // PhotoPath is preserved from the database, not bound from the form.
             ModelState.Remove(nameof(teacher.PhotoPath));
 
-            if (ModelState.IsValid)
+            var photoResult = await _photoService.SaveProfilePhotoAsync(photo);
+            if (photoResult.Error is { } photoError)
+                ModelState.AddModelError("photo", photoError);
+
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    if (photo != null)
-                    {
-                        if (photo.Length > 100 * 1024)
-                        {
-                            ModelState.AddModelError("photo", "Photo size must be within 100KB.");
-                        }
-                        else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
-                        {
-                            ModelState.AddModelError("photo", "Only .jpg files are allowed.");
-                        }
-                        else
-                        {
-                            string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                            if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-
-                            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                            using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
-                            {
-                                await photo.CopyToAsync(stream);
-                            }
-                            teacher.PhotoPath = "/uploads/profiles/" + fileName;
-                        }
-                    }
-                    else
-                    {
-                        var existing = await _context.Teachers.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
-                        if (existing != null) teacher.PhotoPath = existing.PhotoPath;
-                    }
-
-                    _context.Update(teacher);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TeacherExists(teacher.Id)) return NotFound();
-                    else throw;
-                }
-                return RedirectToAction(nameof(Index));
+                return View(teacher);
             }
-            return View(teacher);
+
+            var existing = await _context.Teachers.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
+            if (existing == null) return NotFound();
+
+            string? replacedPhotoPath = null;
+            if (photoResult.RelativePath != null)
+            {
+                replacedPhotoPath = existing.PhotoPath;
+                teacher.PhotoPath = photoResult.RelativePath;
+            }
+            else
+            {
+                teacher.PhotoPath = existing.PhotoPath;
+            }
+
+            try
+            {
+                _context.Update(teacher);
+                await _context.SaveChangesAsync();
+                _photoService.DeletePhotoFile(replacedPhotoPath);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TeacherExists(teacher.Id)) return NotFound();
+                else throw;
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> Delete(int? id)
@@ -206,6 +180,7 @@ namespace IDCardBD.Web.Controllers
             {
                 _context.Teachers.Remove(teacher);
                 await _context.SaveChangesAsync();
+                _photoService.DeletePhotoFile(teacher.PhotoPath);
             }
             return RedirectToAction(nameof(Index));
         }

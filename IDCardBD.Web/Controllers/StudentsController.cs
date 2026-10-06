@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 using Microsoft.AspNetCore.Authorization;
+using IDCardBD.Web.Services;
 
 namespace IDCardBD.Web.Controllers
 {
@@ -12,12 +13,12 @@ namespace IDCardBD.Web.Controllers
     public class StudentsController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment;
+        private readonly IPhotoService _photoService;
 
-        public StudentsController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public StudentsController(ApplicationDbContext context, IPhotoService photoService)
         {
             _context = context;
-            _environment = environment;
+            _photoService = photoService;
         }
 
         public async Task<IActionResult> Index(string searchString, int? classId, int? sectionId, int? groupId, string sortOrder)
@@ -67,22 +68,22 @@ namespace IDCardBD.Web.Controllers
                     query = query.OrderByDescending(s => s.RollNumber);
                     break;
                 case "Class":
-                    query = query.OrderBy(s => s.Class.Name);
+                    query = query.OrderBy(s => s.Class!.Name);
                     break;
                 case "class_desc":
-                    query = query.OrderByDescending(s => s.Class.Name);
+                    query = query.OrderByDescending(s => s.Class!.Name);
                     break;
                 case "Section":
-                    query = query.OrderBy(s => s.Section.Name);
+                    query = query.OrderBy(s => s.Section!.Name);
                     break;
                 case "section_desc":
-                    query = query.OrderByDescending(s => s.Section.Name);
+                    query = query.OrderByDescending(s => s.Section!.Name);
                     break;
                 case "Group":
-                    query = query.OrderBy(s => s.Group.Name);
+                    query = query.OrderBy(s => s.Group!.Name);
                     break;
                 case "group_desc":
-                    query = query.OrderByDescending(s => s.Group.Name);
+                    query = query.OrderByDescending(s => s.Group!.Name);
                     break;
                 default:
                     query = query.OrderBy(s => s.FullName);
@@ -110,42 +111,22 @@ namespace IDCardBD.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Student student, IFormFile photo)
+        public async Task<IActionResult> Create(Student student, IFormFile? photo)
         {
-                if (photo != null)
-                {
-                    if (photo.Length > 100 * 1024)
-                    {
-                        ModelState.AddModelError("photo", "Photo size must be within 100KB.");
-                    }
-                    else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
-                    {
-                        ModelState.AddModelError("photo", "Only .jpg files are allowed.");
-                    }
-                    else
-                    {
-                        string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                        if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                        
-                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                        using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
-                        {
-                            await photo.CopyToAsync(stream);
-                        }
-                        student.PhotoPath = "/uploads/profiles/" + fileName;
-                    }
-                }
+            var photoResult = await _photoService.SaveProfilePhotoAsync(photo);
+            if (photoResult.Error is { } photoError)
+                ModelState.AddModelError("photo", photoError);
 
-                if (ModelState.IsValid)
-                {
-                    student.Category = UserCategory.Student;
-                    // Generate logic for QR code if needed
-                    student.QRCode = student.RollNumber; 
-                    
-                    _context.Add(student);
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
+            if (ModelState.IsValid)
+            {
+                student.Category = UserCategory.Student;
+                student.QRCode = student.RollNumber;
+                student.PhotoPath = photoResult.RelativePath;
+
+                _context.Add(student);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
             ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
             ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
             ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name", student.GroupId);
@@ -166,69 +147,51 @@ namespace IDCardBD.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Student student, IFormFile photo)
+        public async Task<IActionResult> Edit(int id, Student student, IFormFile? photo)
         {
             if (id != student.Id) return NotFound();
-            
-            // Remove PhotoPath from model state validation
+
+            // PhotoPath is preserved from the database, not bound from the form.
             ModelState.Remove(nameof(student.PhotoPath));
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                     // Retrieve existing entity to keep existing photo if new one is not provided, 
-                     // OR we just update the properties. But EF Core tracking might overwrite.
-                     // Better approach: Get AsNoTracking or detach, but here simpler:
-                     // We need to fetch existing photo path if photo is null.
-                     
-                     if (photo != null)
-                     {
-                         if (photo.Length > 100 * 1024)
-                         {
-                             ModelState.AddModelError("photo", "Photo size must be within 100KB.");
-                         }
-                         else if (Path.GetExtension(photo.FileName).ToLower() != ".jpg")
-                         {
-                             ModelState.AddModelError("photo", "Only .jpg files are allowed.");
-                         }
-                         else
-                         {
-                             string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "profiles");
-                             if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                             
-                             string fileName = Guid.NewGuid().ToString() + Path.GetExtension(photo.FileName);
-                             using (var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create))
-                             {
-                                 await photo.CopyToAsync(stream);
-                             }
-                             student.PhotoPath = "/uploads/profiles/" + fileName;
-                         }
-                     }
-                     else 
-                     {
-                         // Keep existing photo path. Since 'student' is bound from form, 
-                         // we need a hidden input for PhotoPath in the view, OR fetch DB value.
-                         // Let's rely on hidden input or fetch. 
-                         // If we rely on fetch:
-                         var existing = await _context.Students.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
-                         if (existing != null) student.PhotoPath = existing.PhotoPath;
-                     }
+            var photoResult = await _photoService.SaveProfilePhotoAsync(photo);
+            if (photoResult.Error is { } photoError)
+                ModelState.AddModelError("photo", photoError);
 
-                    _context.Update(student);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StudentExists(student.Id)) return NotFound();
-                    else throw;
-                }
-                return RedirectToAction(nameof(Index));
+            if (!ModelState.IsValid)
+            {
+                ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
+                ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
+                ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name", student.GroupId);
+                return View(student);
             }
-            ViewBag.ClassId = new SelectList(await _context.Classes.ToListAsync(), "Id", "Name", student.ClassId);
-            ViewBag.SectionId = new SelectList(await _context.Sections.ToListAsync(), "Id", "Name", student.SectionId);
-            ViewBag.GroupId = new SelectList(await _context.AcademicGroups.ToListAsync(), "Id", "Name", student.GroupId);
-            return View(student);
+
+            var existing = await _context.Students.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+            if (existing == null) return NotFound();
+
+            string? replacedPhotoPath = null;
+            if (photoResult.RelativePath != null)
+            {
+                replacedPhotoPath = existing.PhotoPath;
+                student.PhotoPath = photoResult.RelativePath;
+            }
+            else
+            {
+                student.PhotoPath = existing.PhotoPath;
+            }
+
+            try
+            {
+                _context.Update(student);
+                await _context.SaveChangesAsync();
+                _photoService.DeletePhotoFile(replacedPhotoPath);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!StudentExists(student.Id)) return NotFound();
+                else throw;
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> Delete(int? id)
@@ -248,6 +211,7 @@ namespace IDCardBD.Web.Controllers
             {
                 _context.Students.Remove(student);
                 await _context.SaveChangesAsync();
+                _photoService.DeletePhotoFile(student.PhotoPath);
             }
             return RedirectToAction(nameof(Index));
         }

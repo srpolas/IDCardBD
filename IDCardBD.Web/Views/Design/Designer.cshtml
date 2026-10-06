@@ -1,0 +1,714 @@
+@model IDCardBD.Web.Models.CardTemplate
+
+@{
+    ViewData["Title"] = "Card Designer";
+    var frontJson = string.IsNullOrWhiteSpace(Model.FrontElementsJson) ? "[]" : Model.FrontElementsJson;
+    var backJson = string.IsNullOrWhiteSpace(Model.BackElementsJson) ? "[]" : Model.BackElementsJson;
+    var orientation = string.Equals(Model.Orientation, "Portrait", StringComparison.OrdinalIgnoreCase) ? "Portrait" : "Landscape";
+}
+
+<style>
+    @@font-face {
+        font-family: 'Lato';
+        src: url('/fonts/Lato/Lato-Regular.ttf') format('truetype');
+        font-weight: normal;
+    }
+
+    @@font-face {
+        font-family: 'Lato';
+        src: url('/fonts/Lato/Lato-Bold.ttf') format('truetype');
+        font-weight: bold;
+    }
+
+    .designer-cards {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .designer-card-wrap {
+        text-align: center;
+    }
+
+    .designer-card-wrap .side-label {
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #555;
+    }
+
+    .designer-card {
+        position: relative;
+        width: 485.28px;   /* 2x landscape card points (242.64pt) */
+        height: 306px;     /* 2x landscape card points (153pt) */
+        background-color: #fff;
+        background-size: 100% 100%; /* stretch to card, matches PDF render */
+        background-repeat: no-repeat;
+        border: 1px solid #d2d6de;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    .designer-card.portrait {
+        width: 306px;
+        height: 485.28px;
+    }
+
+    .card-el {
+        position: absolute;
+        cursor: move;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .card-el.selected {
+        outline: 2px dashed #3c8dbc;
+        outline-offset: 1px;
+    }
+
+    .card-el.el-hidden .el-content,
+    .card-el.el-hidden svg { opacity: .3; }
+
+    .card-el.el-hidden {
+        outline: 1px dashed #bbb;
+    }
+
+    .card-el .el-content {
+        pointer-events: none;
+        line-height: 1.1;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .card-el.photo-box, .card-el.qr-box {
+        border: 1px dashed #999;
+        background-color: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-el.qr-box { background-color: #fff; }
+
+    .resize-handle {
+        position: absolute;
+        right: -7px;
+        bottom: -7px;
+        width: 14px;
+        height: 14px;
+        background: #3c8dbc;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        cursor: nwse-resize;
+        z-index: 10;
+    }
+
+    .prop-group { margin-bottom: 12px; }
+
+    #propPanel.disabled { opacity: .45; pointer-events: none; }
+
+    .layers-list { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto; }
+
+    .layers-list li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        font-size: 13px;
+    }
+
+    .layers-list li:hover { background: #f4f6f9; }
+
+    .layers-list li.active { border-color: #3c8dbc; background: #e8f2f9; }
+
+    .layers-list li .layer-eye { cursor: pointer; color: #6c757d; width: 18px; text-align: center; }
+
+    .layers-list li .layer-eye.off { color: #ccc; }
+
+    .layers-list li .layer-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .layers-list li.hidden .layer-name { color: #aaa; text-decoration: line-through; }
+</style>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-id-card mr-1"></i> @Model.Name — Card Designer</h3>
+                <div class="card-tools">
+                    <div class="btn-group btn-group-toggle mr-4" data-toggle="buttons" id="orientationToggle">
+                        <label class="btn btn-outline-primary btn-sm @(orientation == "Landscape" ? "active" : "")" data-orientation="Landscape">
+                            <input type="radio" name="orientation" @(orientation == "Landscape" ? "checked" : "")> <i class="fas fa-square"></i> Landscape
+                        </label>
+                        <label class="btn btn-outline-primary btn-sm @(orientation == "Portrait" ? "active" : "")" data-orientation="Portrait">
+                            <input type="radio" name="orientation" @(orientation == "Portrait" ? "checked" : "")> <i class="fas fa-mobile-alt"></i> Portrait
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">
+                    Drag elements to position them; drag the blue handle to resize photos and QR codes; click an element
+                    (or a layer below) to edit it. Use the eye icon to show/hide data without deleting. Preview uses sample
+                    data — real data is filled in when printing.
+                </p>
+                <div class="designer-cards">
+                    <div class="designer-card-wrap">
+                        <div class="side-label">FRONT</div>
+                        <div id="cardFront" class="designer-card" style="background-image:url('@Model.FrontBgPath')"></div>
+                        <ul class="layers-list mt-2" id="layersFront"></ul>
+                    </div>
+                    <div class="designer-card-wrap">
+                        <div class="side-label">BACK</div>
+                        <div id="cardBack" class="designer-card" style="background-image:url('@Model.BackBgPath')"></div>
+                        <ul class="layers-list mt-2" id="layersBack"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card card-default">
+            <div class="card-header">
+                <h3 class="card-title">Add Elements</h3>
+            </div>
+            <div class="card-body">
+                <div class="prop-group">
+                    <label>Data field (text)</label>
+                    <select id="newFieldSelect" class="form-control form-control-sm"></select>
+                    <button type="button" id="btnAddText" class="btn btn-primary btn-sm btn-block mt-2">
+                        <i class="fas fa-plus"></i> Add Text
+                    </button>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <button type="button" id="btnAddPhoto" class="btn btn-outline-primary btn-sm btn-block">
+                            <i class="fas fa-user"></i> Add Photo
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" id="btnAddQr" class="btn btn-outline-primary btn-sm btn-block">
+                            <i class="fas fa-qrcode"></i> Add QR
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-default">
+            <div class="card-header">
+                <h3 class="card-title">Element Properties</h3>
+            </div>
+            <div class="card-body" id="propPanel">
+                <p class="text-muted" id="propHint">Select an element on the card to edit it.</p>
+
+                <div id="propControls" style="display:none;">
+                    <div class="prop-group" id="groupField">
+                        <label>Data field</label>
+                        <select id="selField" class="form-control form-control-sm"></select>
+                    </div>
+                    <div class="prop-group" id="groupCustomText" style="display:none;">
+                        <label>Custom text</label>
+                        <input type="text" id="txtCustom" class="form-control form-control-sm" />
+                    </div>
+                    <div class="row" id="groupTypography">
+                        <div class="col-6">
+                            <div class="prop-group">
+                                <label>Font family</label>
+                                <select id="selFontFamily" class="form-control form-control-sm">
+                                    <option>Lato</option>
+                                    <option>Arial</option>
+                                    <option>Verdana</option>
+                                    <option>Tahoma</option>
+                                    <option>Trebuchet MS</option>
+                                    <option>Georgia</option>
+                                    <option>Times New Roman</option>
+                                    <option>Courier New</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="prop-group">
+                                <label>Font size (pt)</label>
+                                <input type="number" id="numFontSize" class="form-control form-control-sm" min="3" max="40" step="0.5" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="groupTextStyle">
+                        <div class="col-7">
+                            <div class="prop-group">
+                                <label>Rotation (°)</label>
+                                <input type="number" id="numRotation" class="form-control form-control-sm" min="-180" max="180" step="5" value="0" />
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <div class="prop-group">
+                                <label>Align</label>
+                                <select id="selAlign" class="form-control form-control-sm">
+                                    <option value="left">Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="right">Right</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="prop-group" id="groupColor">
+                        <label>Text color</label>
+                        <input type="color" id="inpColor" class="form-control form-control-sm" style="height: 34px; padding: 2px;" />
+                    </div>
+                    <div class="prop-group" id="groupWidth">
+                        <label>Text box width (% of card — 0 = auto)</label>
+                        <input type="number" id="numWidth" class="form-control form-control-sm" min="0" max="100" step="1" />
+                    </div>
+                    <div class="prop-group" id="groupStyle">
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" id="chkBold" class="form-check-input">
+                            <label class="form-check-label" for="chkBold">Bold</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" id="chkVisible" class="form-check-input" checked>
+                            <label class="form-check-label" for="chkVisible">Show on card</label>
+                        </div>
+                    </div>
+                    <button type="button" id="btnDelete" class="btn btn-danger btn-sm btn-block">
+                        <i class="fas fa-trash"></i> Delete Element
+                    </button>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" id="btnSave" class="btn btn-success btn-block">
+                    <i class="fas fa-save"></i> Save Layout
+                </button>
+                <a asp-action="Index" class="btn btn-default btn-block mt-2">Back to Templates</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+    // Card preview is 2x the PDF point size, so 1 PDF pt = 2 preview px.
+    var PX_PER_PT = 2;
+    var LAND_W = 485.28, LAND_H = 306;   // 2x 242.64pt x 153pt
+    var PORTRAIT = { w: LAND_H, h: LAND_W };
+
+    var FIELDS = [
+        { key: 'FullName',        label: 'Full Name',        sample: 'Rahim Uddin' },
+        { key: 'CardCode',        label: 'Roll / Staff ID',  sample: 'STD-0001' },
+        { key: 'RollNumber',      label: 'Roll Number (student)', sample: '10' },
+        { key: 'ClassName',       label: 'Class (student)',  sample: 'Class 9' },
+        { key: 'SectionName',     label: 'Section (student)', sample: 'A' },
+        { key: 'GroupName',       label: 'Group (student)',  sample: 'Science' },
+        { key: 'DateOfBirth',     label: 'Date of Birth (student)', sample: '01/01/2008' },
+        { key: 'Session',         label: 'Session (student)', sample: '2025-26' },
+        { key: 'AdmissionDate',   label: 'Admission Date (student)', sample: '05/01/2025' },
+        { key: 'FathersName',     label: "Father's Name (student)", sample: 'Karim Uddin' },
+        { key: 'MothersName',     label: "Mother's Name (student)", sample: 'Amina Begum' },
+        { key: 'GuardianName',    label: 'Guardian Name (student)', sample: 'Karim Uddin' },
+        { key: 'Code',            label: 'Staff ID (employee/teacher)', sample: 'EMP-001' },
+        { key: 'Designation',     label: 'Designation (employee/teacher)', sample: 'Sr. Teacher' },
+        { key: 'Department',      label: 'Department (employee/teacher)', sample: 'Science' },
+        { key: 'Location',        label: 'Location (employee/teacher)', sample: 'Main Campus' },
+        { key: 'WorkingArea',     label: 'Working Area (employee/teacher)', sample: 'Laboratory' },
+        { key: 'EmergencyContact',label: 'Emergency Contact (staff)', sample: '01898765432' },
+        { key: 'IdNumber',        label: 'NID / Birth Cert No', sample: '19980123456' },
+        { key: 'Gender',          label: 'Gender', sample: 'Male' },
+        { key: 'BloodGroup',      label: 'Blood Group', sample: 'B+' },
+        { key: 'Phone',           label: 'Phone', sample: '01712345678' },
+        { key: 'Email',           label: 'Email', sample: 'rahim@example.com' },
+        { key: 'Address',         label: 'Address', sample: 'Mirpur, Dhaka' },
+        { key: 'IssuedOn',        label: 'Issued On', sample: '06/10/2026' },
+        { key: 'ValidUntil',      label: 'Valid Until', sample: '05/10/2028' },
+        { key: 'InstituteName',   label: 'Institute Name (template)', sample: @Html.Raw(Json.Serialize(string.IsNullOrEmpty(Model.InstituteName) ? "Your Institute Name" : Model.InstituteName)) },
+        { key: 'custom',          label: '— Custom Text —', sample: '' }
+    ];
+
+    var orientation = '@orientation';
+    var sides = {
+        front: @Html.Raw(frontJson),
+        back:  @Html.Raw(backJson)
+    };
+    var selectedId = null;
+    var idCounter = 1;
+    ['front', 'back'].forEach(function (s) {
+        sides[s].forEach(function (e) { e._id = idCounter++; });
+    });
+
+    function cardDims() {
+        return orientation === 'Portrait' ? PORTRAIT : { w: LAND_W, h: LAND_H };
+    }
+    function qrHeightFactor() {
+        var d = cardDims();
+        return d.w / d.h; // QR box is square in points -> height % of card height
+    }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    function fieldInfo(key) {
+        for (var i = 0; i < FIELDS.length; i++) if (FIELDS[i].key === key) return FIELDS[i];
+        return null;
+    }
+    function elementName(el) {
+        if (el.type === 'photo') return 'Photo';
+        if (el.type === 'qr') return 'QR Code';
+        if (el.field === 'custom') return '"' + (el.text || 'Custom text') + '"';
+        var f = fieldInfo(el.field);
+        return f ? f.label.replace(/\s*\(.*\)$/, '') : (el.field || 'Text');
+    }
+    function sampleFor(el) {
+        if (el.field === 'custom') return el.text || 'Custom text';
+        var f = fieldInfo(el.field);
+        return f ? f.sample : (el.field || '?');
+    }
+    function findEl(id) {
+        var el = sides.front.find(function (e) { return e._id === id; });
+        return el || sides.back.find(function (e) { return e._id === id; }) || null;
+    }
+    function sideOf(id) {
+        return sides.front.some(function (e) { return e._id === id; }) ? 'front' : 'back';
+    }
+
+    // ---------------------------------------------------------------- render
+    function applyOrientation() {
+        ['cardFront', 'cardBack'].forEach(function (id) {
+            document.getElementById(id).classList.toggle('portrait', orientation === 'Portrait');
+        });
+        document.querySelectorAll('#orientationToggle label').forEach(function (lab) {
+            var input = lab.querySelector('input');
+            lab.classList.toggle('active', lab.dataset.orientation === orientation);
+            if (input) input.checked = lab.dataset.orientation === orientation;
+        });
+        renderAll();
+    }
+
+    function renderAll() { renderSide('front'); renderSide('back'); renderLayers('front'); renderLayers('back'); }
+
+    function renderSide(side) {
+        var card = document.getElementById(side === 'front' ? 'cardFront' : 'cardBack');
+        card.innerHTML = '';
+        sides[side].forEach(function (el) { card.appendChild(buildElDiv(el, card)); });
+    }
+
+    function renderLayers(side) {
+        var list = document.getElementById(side === 'front' ? 'layersFront' : 'layersBack');
+        list.innerHTML = '';
+        sides[side].forEach(function (el) {
+            var li = document.createElement('li');
+            if (el._id === selectedId) li.classList.add('active');
+            if (el.visible === false) li.classList.add('hidden');
+
+            var eye = document.createElement('i');
+            eye.className = 'fas layer-eye ' + (el.visible === false ? 'fa-eye-slash off' : 'fa-eye');
+            eye.title = el.visible === false ? 'Show on card' : 'Hide from card';
+            eye.addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                el.visible = el.visible === false;
+                renderAll();
+            });
+
+            var name = document.createElement('span');
+            name.className = 'layer-name';
+            name.textContent = elementName(el);
+
+            li.appendChild(eye);
+            li.appendChild(name);
+            li.addEventListener('click', function () { selectEl(el._id); });
+            list.appendChild(li);
+        });
+        if (sides[side].length === 0) {
+            var li = document.createElement('li');
+            li.style.cursor = 'default';
+            li.style.color = '#aaa';
+            li.textContent = 'No elements yet';
+            list.appendChild(li);
+        }
+    }
+
+    function buildElDiv(el, card) {
+        var div = document.createElement('div');
+        div.className = 'card-el';
+        div.dataset.id = el._id;
+        if (el.visible === false) div.classList.add('el-hidden');
+
+        var content = document.createElement('div');
+        content.className = 'el-content';
+
+        if (el.type === 'photo') {
+            div.classList.add('photo-box');
+            content.innerHTML = '<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5">' +
+                '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
+            div.appendChild(content);
+        } else if (el.type === 'qr') {
+            div.classList.add('qr-box');
+            content.style.cssText = 'font-size:10px;color:#555;font-weight:bold;';
+            content.textContent = 'QR';
+            div.appendChild(content);
+        } else {
+            content.textContent = sampleFor(el);
+            content.style.fontSize = (el.fontSize * PX_PER_PT) + 'px';
+            content.style.color = el.color;
+            content.style.fontWeight = el.bold ? 'bold' : 'normal';
+            content.style.fontFamily = (el.fontFamily || 'Lato') + ', Arial, sans-serif';
+            content.style.textAlign = el.align || 'left';
+            div.appendChild(content);
+        }
+
+        if (el.rotation) {
+            div.style.transform = 'rotate(' + el.rotation + 'deg)';
+            div.style.transformOrigin = 'center';
+        }
+
+        if (el.type === 'photo' || el.type === 'qr') {
+            var handle = document.createElement('div');
+            handle.className = 'resize-handle';
+            div.appendChild(handle);
+        }
+
+        if (el._id === selectedId) div.classList.add('selected');
+
+        div.addEventListener('pointerdown', function (e) { startPointer(e, el, div, card); });
+        positionEl(div, el);
+        return div;
+    }
+
+    function positionEl(div, el) {
+        div.style.left = el.x + '%';
+        div.style.top = el.y + '%';
+        if (el.type === 'photo') {
+            div.style.width = el.w + '%';
+            div.style.height = el.h + '%';
+        } else if (el.type === 'qr') {
+            div.style.width = el.w + '%';
+            div.style.height = (el.w * qrHeightFactor()) + '%';
+        } else {
+            if (el.w > 0) {
+                div.style.width = el.w + '%';
+                div.style.right = 'auto';
+                div.style.maxWidth = '';
+            } else if ((el.align || 'left') === 'left') {
+                // Left-aligned auto-width text hugs its content (never wraps into a
+                // vertical stack mid-drag) but can never spill past the card edge.
+                div.style.width = 'max-content';
+                div.style.maxWidth = (100 - el.x) + '%';
+                div.style.right = 'auto';
+            } else {
+                // Center/right-aligned text spans from its position to the card edge
+                // so alignment matches the PDF render.
+                div.style.width = 'auto';
+                div.style.maxWidth = '';
+                div.style.right = '0%';
+            }
+        }
+    }
+
+    // ------------------------------------------------------------- interaction
+    function startPointer(e, el, div, card) {
+        e.preventDefault();
+        selectEl(el._id);
+
+        var resizing = e.target.classList.contains('resize-handle');
+        var cardRect = card.getBoundingClientRect();
+        var startX = e.clientX, startY = e.clientY;
+        var start = { x: el.x, y: el.y, w: el.w, h: el.h };
+        var factor = qrHeightFactor();
+
+        function onMove(ev) {
+            if (resizing) {
+                var dwPct = (ev.clientX - startX) / cardRect.width * 100;
+                el.w = clamp(start.w + dwPct, 2, 100 - el.x);
+                if (el.type === 'photo') el.h = clamp(start.h + (ev.clientY - startY) / cardRect.height * 100, 2, 100 - el.y);
+            } else {
+                el.x = clamp(start.x + (ev.clientX - startX) / cardRect.width * 100, 0, 100);
+                el.y = clamp(start.y + (ev.clientY - startY) / cardRect.height * 100, 0, 100);
+            }
+            positionEl(div, el);
+        }
+        function onUp() {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+        }
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+    }
+
+    function selectEl(id) {
+        selectedId = id;
+        document.querySelectorAll('.card-el').forEach(function (d) {
+            d.classList.toggle('selected', Number(d.dataset.id) === id);
+        });
+        renderLayers('front');
+        renderLayers('back');
+        if (id === null) return;
+
+        var el = findEl(id);
+        if (!el) return;
+
+        document.getElementById('propHint').style.display = 'none';
+        document.getElementById('propControls').style.display = 'block';
+
+        var isText = el.type === 'text';
+        document.getElementById('groupField').style.display = isText ? 'block' : 'none';
+        document.getElementById('groupCustomText').style.display = isText && el.field === 'custom' ? 'block' : 'none';
+        document.getElementById('groupTypography').style.display = isText ? 'flex' : 'none';
+        document.getElementById('groupTextStyle').style.display = isText ? 'flex' : 'none';
+        document.getElementById('groupColor').style.display = isText ? 'block' : 'none';
+        document.getElementById('groupWidth').style.display = isText ? 'block' : 'none';
+        document.getElementById('groupStyle').style.display = 'block';
+
+        if (isText) {
+            document.getElementById('selField').value = el.field || 'FullName';
+            document.getElementById('txtCustom').value = el.text || '';
+            document.getElementById('selFontFamily').value = el.fontFamily || 'Lato';
+            document.getElementById('numFontSize').value = el.fontSize;
+            document.getElementById('numRotation').value = el.rotation || 0;
+            document.getElementById('numWidth').value = el.w || 0;
+            document.getElementById('inpColor').value = el.color || '#000000';
+            document.getElementById('chkBold').checked = !!el.bold;
+            document.getElementById('selAlign').value = el.align || 'left';
+        }
+        document.getElementById('chkVisible').checked = el.visible !== false;
+    }
+
+    // ------------------------------------------------------------ property panel
+    function selectedSide() { return selectedId === null ? 'front' : sideOf(selectedId); }
+
+    function bindPropChange(inputId, applyFn) {
+        document.getElementById(inputId).addEventListener('input', function () {
+            var el = findEl(selectedId);
+            if (!el) return;
+            applyFn(el);
+            renderSide(selectedSide());
+            renderLayers('front');
+            renderLayers('back');
+            document.querySelectorAll('.card-el').forEach(function (d) {
+                d.classList.toggle('selected', Number(d.dataset.id) === selectedId);
+            });
+        });
+    }
+
+    bindPropChange('selField', function (el) {
+        el.field = document.getElementById('selField').value;
+        document.getElementById('groupCustomText').style.display = el.field === 'custom' ? 'block' : 'none';
+    });
+    bindPropChange('txtCustom', function (el) { el.text = document.getElementById('txtCustom').value; });
+    bindPropChange('selFontFamily', function (el) { el.fontFamily = document.getElementById('selFontFamily').value; });
+    bindPropChange('numFontSize', function (el) { el.fontSize = parseFloat(document.getElementById('numFontSize').value) || 8; });
+    bindPropChange('numRotation', function (el) {
+        el.rotation = parseFloat(document.getElementById('numRotation').value) || 0;
+        renderSide(selectedSide());
+    });
+    bindPropChange('inpColor', function (el) { el.color = document.getElementById('inpColor').value; });
+    bindPropChange('numWidth', function (el) {
+        el.w = Math.max(0, parseFloat(document.getElementById('numWidth').value) || 0);
+        renderSide(selectedSide());
+    });
+    bindPropChange('chkBold', function (el) { el.bold = document.getElementById('chkBold').checked; });
+    bindPropChange('selAlign', function (el) { el.align = document.getElementById('selAlign').value; });
+    bindPropChange('chkVisible', function (el) {
+        el.visible = document.getElementById('chkVisible').checked;
+        renderSide(selectedSide());
+    });
+
+    document.getElementById('btnDelete').addEventListener('click', function () {
+        ['front', 'back'].forEach(function (s) {
+            sides[s] = sides[s].filter(function (e) { return e._id !== selectedId; });
+        });
+        selectedId = null;
+        renderAll();
+        document.getElementById('propControls').style.display = 'none';
+        document.getElementById('propHint').style.display = 'block';
+    });
+
+    // -------------------------------------------------------------- add elements
+    function fillFieldSelect(sel, includeCustom) {
+        sel.innerHTML = '';
+        FIELDS.forEach(function (f) {
+            if (f.key === 'custom' && !includeCustom) return;
+            var opt = document.createElement('option');
+            opt.value = f.key;
+            opt.textContent = f.label;
+            sel.appendChild(opt);
+        });
+    }
+    fillFieldSelect(document.getElementById('newFieldSelect'), false);
+    fillFieldSelect(document.getElementById('selField'), true);
+
+    function activeCardSide() {
+        // Elements are added to the front card by default; both cards are always visible,
+        // so track "last clicked" card for placement.
+        return window._lastSide || 'front';
+    }
+
+    document.getElementById('cardFront').addEventListener('pointerdown', function () { window._lastSide = 'front'; });
+    document.getElementById('cardBack').addEventListener('pointerdown', function () { window._lastSide = 'back'; });
+
+    document.getElementById('btnAddText').addEventListener('click', function () {
+        var field = document.getElementById('newFieldSelect').value;
+        var el = { _id: idCounter++, type: 'text', field: field, text: '', x: 8, y: 8, w: 0, h: 0, fontSize: 8, color: '#000000', bold: false, align: 'left', fontFamily: 'Lato', rotation: 0, visible: true };
+        sides[activeCardSide()].push(el);
+        renderAll();
+        selectEl(el._id);
+    });
+
+    document.getElementById('btnAddPhoto').addEventListener('click', function () {
+        var el = { _id: idCounter++, type: 'photo', x: 36, y: 15, w: 25, h: 45, visible: true };
+        sides[activeCardSide()].push(el);
+        renderAll();
+        selectEl(el._id);
+    });
+
+    document.getElementById('btnAddQr').addEventListener('click', function () {
+        var el = { _id: idCounter++, type: 'qr', x: 78, y: 62, w: 14, visible: true };
+        sides[activeCardSide()].push(el);
+        renderAll();
+        selectEl(el._id);
+    });
+
+    // ------------------------------------------------------------- orientation
+    document.querySelectorAll('#orientationToggle label').forEach(function (lab) {
+        lab.addEventListener('click', function () {
+            if (orientation === lab.dataset.orientation) return;
+            orientation = lab.dataset.orientation;
+            applyOrientation();
+        });
+    });
+
+    // -------------------------------------------------------------------- save
+    document.getElementById('btnSave').addEventListener('click', function () {
+        var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        var body = 'frontJson=' + encodeURIComponent(JSON.stringify(sides.front)) +
+                   '&backJson=' + encodeURIComponent(JSON.stringify(sides.back)) +
+                   '&orientation=' + encodeURIComponent(orientation);
+        var btn = document.getElementById('btnSave');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        fetch('@Url.Action("SaveLayout", "Design", new { id = Model.Id })', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+            body: body
+        }).then(function (r) {
+            if (r.ok) {
+                window.location.href = '@Url.Action("Index", "Design")';
+            } else {
+                alert('Save failed (HTTP ' + r.status + ').');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Layout';
+            }
+        }).catch(function (err) {
+            alert('Save failed: ' + err);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Save Layout';
+        });
+    });
+
+    applyOrientation();
+</script>
+}

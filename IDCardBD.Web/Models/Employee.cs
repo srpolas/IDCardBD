@@ -33,5 +33,12 @@ namespace IDCardBD.Web.Models
 
         [StringLength(5)]
         public string? BloodGroup { get; set; }
+
+        [StringLength(50)]
+        public string? Location { get; set; }
+
+        [Display(Name = "Working Area")]
+        [StringLength(50)]
+        public string? WorkingArea { get; set; }
     }
 }

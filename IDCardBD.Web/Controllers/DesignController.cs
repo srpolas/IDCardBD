@@ -4,7 +4,6 @@ using IDCardBD.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
 using Microsoft.AspNetCore.Authorization;
-using IDCardBD.Web.Models;
 
 namespace IDCardBD.Web.Controllers
 {
@@ -25,6 +24,31 @@ namespace IDCardBD.Web.Controllers
             return View(await _context.CardTemplates.ToListAsync());
         }
 
+        public async Task<IActionResult> Designer(int? id)
+        {
+            if (id == null) return NotFound();
+            var template = await _context.CardTemplates.FindAsync(id);
+            if (template == null) return NotFound();
+            return View(template);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveLayout(int id, string frontJson, string backJson, string? orientation)
+        {
+            var template = await _context.CardTemplates.FindAsync(id);
+            if (template == null) return NotFound();
+
+            template.FrontElementsJson = frontJson;
+            template.BackElementsJson = backJson;
+            if (orientation == "Portrait" || orientation == "Landscape")
+                template.Orientation = orientation;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
         public IActionResult Create()
         {
             return View();
@@ -32,7 +56,7 @@ namespace IDCardBD.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CardTemplate model, IFormFile frontImage, IFormFile backImage)
+        public async Task<IActionResult> Create(CardTemplate model, IFormFile? frontImage, IFormFile? backImage)
         {
             ModelState.Remove(nameof(model.FrontBgPath));
             ModelState.Remove(nameof(model.BackBgPath));
@@ -72,6 +96,7 @@ namespace IDCardBD.Web.Controllers
             return View(model);
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var template = await _context.CardTemplates.FindAsync(id);
@@ -95,7 +120,7 @@ namespace IDCardBD.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, CardTemplate model, IFormFile frontImage, IFormFile backImage)
+        public async Task<IActionResult> Edit(int id, CardTemplate model, IFormFile? frontImage, IFormFile? backImage)
         {
             if (id != model.Id) return NotFound();
 
@@ -106,23 +131,27 @@ namespace IDCardBD.Web.Controllers
             {
                 try
                 {
+                    // The form never posts paths or layout JSON — always take them from the
+                    // existing record so saving the form doesn't wipe the designer's layout.
+                    var existing = await _context.CardTemplates.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
+                    if (existing == null) return NotFound();
+
+                    model.FrontBgPath = existing.FrontBgPath;
+                    model.BackBgPath = existing.BackBgPath;
+                    model.FrontElementsJson = existing.FrontElementsJson;
+                    model.BackElementsJson = existing.BackElementsJson;
+
                     if (frontImage != null)
                     {
                          string uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "templates");
                          if (!Directory.Exists(uploadDir)) Directory.CreateDirectory(uploadDir);
-                         
+
                          string frontFileName = Guid.NewGuid().ToString() + Path.GetExtension(frontImage.FileName);
                          using (var stream = new FileStream(Path.Combine(uploadDir, frontFileName), FileMode.Create))
                          {
                              await frontImage.CopyToAsync(stream);
                          }
                          model.FrontBgPath = "/uploads/templates/" + frontFileName;
-                    }
-                    else
-                    {
-                        // Keep existing path if not updating
-                         var existing = await _context.CardTemplates.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
-                         if (existing != null) model.FrontBgPath = existing.FrontBgPath;
                     }
 
                     if (backImage != null)
@@ -136,15 +165,6 @@ namespace IDCardBD.Web.Controllers
                              await backImage.CopyToAsync(stream);
                          }
                          model.BackBgPath = "/uploads/templates/" + backFileName;
-                    }
-                    else
-                    {
-                        // Keep existing path if not updating
-                         var existing = await _context.CardTemplates.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
-                         // Note: Double query here is inefficient but safe for now. 
-                         // Better to query once before checks.
-                         if (existing != null && string.IsNullOrEmpty(model.BackBgPath)) model.BackBgPath = existing.BackBgPath;
-                         else if (existing != null) model.BackBgPath = existing.BackBgPath; // Logic simplification
                     }
 
                     _context.Update(model);
@@ -182,9 +202,6 @@ namespace IDCardBD.Web.Controllers
                 if (!string.IsNullOrEmpty(template.FrontBgPath))
                 {
                     var frontPath = Path.Combine(_environment.WebRootPath, template.FrontBgPath.TrimStart('/'));
-                    if (System.IO.File.Exists(frontPath)) System.IO.File.Exists(frontPath); // System.IO.File.Delete(frontPath)
-                    
-                    // Fixed: actually use Delete
                     try { if (System.IO.File.Exists(frontPath)) System.IO.File.Delete(frontPath); } catch { }
                 }
 

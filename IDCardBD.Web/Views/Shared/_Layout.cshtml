@@ -189,8 +189,14 @@
         <!-- Main Footer -->
         <footer class="main-footer">
             <div class="@(User.Identity?.IsAuthenticated == true ? "container-fluid" : "container")">
+                @{
+                    var asm = System.Reflection.Assembly.GetEntryAssembly();
+                    var infoAttr = asm == null ? null : (System.Reflection.AssemblyInformationalVersionAttribute?)Attribute.GetCustomAttribute(asm, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
+                    var infoVer = infoAttr?.InformationalVersion;
+                    var versionText = string.IsNullOrWhiteSpace(infoVer) ? "" : $"v{infoVer.Split('+')[0]}";
+                }
                 <div class="float-right d-none d-sm-inline">
-                    IDCardBD System
+                    IDCardBD System @versionText
                 </div>
                 <strong>Copyright &copy; @DateTime.Now.Year.</strong> All rights reserved.
             </div>

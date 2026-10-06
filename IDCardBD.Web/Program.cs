@@ -27,6 +27,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddScoped<IDCardBD.Web.Services.IPdfService, IDCardBD.Web.Services.PdfService>();
+builder.Services.AddScoped<IDCardBD.Web.Services.IPhotoService, IDCardBD.Web.Services.PhotoService>();
 
 var app = builder.Build();
 

@@ -56,6 +56,7 @@ namespace IDCardBD.Web.Controllers
         public IActionResult Index() => RedirectToAction(nameof(Queue));
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateStatus(int[] studentIds, int[] employeeIds, int[] teacherIds, PrintStatus baseStatus)
         {
@@ -95,17 +96,26 @@ namespace IDCardBD.Web.Controllers
 
         public async Task<IActionResult> Generate(int id, string type)
         {
-            IdentityBase? person = null;
+            IdentityBase? person;
             if (type == "Student")
             {
                 person = await _context.Students
                     .Include(s => s.Class)
                     .Include(s => s.Section)
+                    .Include(s => s.Group)
                     .FirstOrDefaultAsync(s => s.Id == id);
             }
             else if (type == "Employee")
             {
                 person = await _context.Employees.FindAsync(id);
+            }
+            else if (type == "Teacher")
+            {
+                person = await _context.Teachers.FindAsync(id);
+            }
+            else
+            {
+                return BadRequest("Unknown card type.");
             }
 
             if (person == null) return NotFound();
@@ -115,6 +125,23 @@ namespace IDCardBD.Web.Controllers
 
             var pdfBytes = _pdfService.GenerateIdCard(person, template);
             return File(pdfBytes, "application/pdf", $"{person.FullName}_ID.pdf");
+        }
+
+        /// <summary>Downloads a QR code PNG encoding the person's details as a vCard (scan to save contact).</summary>
+        public async Task<IActionResult> Qr(int id, string type)
+        {
+            IdentityBase? person = type switch
+            {
+                "Student" => await _context.Students.FirstOrDefaultAsync(s => s.Id == id),
+                "Employee" => await _context.Employees.FirstOrDefaultAsync(e => e.Id == id),
+                "Teacher" => await _context.Teachers.FirstOrDefaultAsync(t => t.Id == id),
+                _ => null
+            };
+            if (person == null) return NotFound();
+
+            var template = await _context.CardTemplates.FirstOrDefaultAsync(t => t.IsActive) ?? new CardTemplate();
+            var pngBytes = _pdfService.GenerateQrCodeImage(person, template);
+            return File(pngBytes, "image/png", $"{person.FullName}_QR.png");
         }
     }
 }

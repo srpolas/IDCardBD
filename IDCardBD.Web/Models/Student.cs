@@ -51,9 +51,14 @@ namespace IDCardBD.Web.Models
         [StringLength(20)]
         public string PhoneNumber { get; set; } = string.Empty;
 
-        public string? Address { get; set; }
-
         [StringLength(5)]
         public string? BloodGroup { get; set; }
+
+        [Display(Name = "Admission Date")]
+        [DataType(DataType.Date)]
+        public DateTime? AdmissionDate { get; set; }
+
+        [StringLength(20)]
+        public string? Session { get; set; }
     }
 }

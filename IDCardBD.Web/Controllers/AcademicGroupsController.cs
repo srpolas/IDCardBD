@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 using Microsoft.AspNetCore.Authorization;
-using IDCardBD.Web.Models;
 
 namespace IDCardBD.Web.Controllers
 {

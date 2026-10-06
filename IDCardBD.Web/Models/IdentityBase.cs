@@ -22,5 +22,22 @@ namespace IDCardBD.Web.Models
         public bool IsPrinted { get; set; }
 
         public PrintStatus PrintStatus { get; set; } = PrintStatus.None;
+
+        [Display(Name = "NID / Birth Cert No")]
+        [StringLength(30)]
+        public string? IdNumber { get; set; }
+
+        [StringLength(10)]
+        public string? Gender { get; set; }
+
+        [Display(Name = "Issued On")]
+        [DataType(DataType.Date)]
+        public DateTime? IssuedOn { get; set; }
+
+        [Display(Name = "Valid Until")]
+        [DataType(DataType.Date)]
+        public DateTime? ValidUntil { get; set; }
+
+        public string? Address { get; set; }
     }
 }

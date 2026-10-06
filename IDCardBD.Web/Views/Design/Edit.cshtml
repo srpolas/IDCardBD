@@ -24,6 +24,12 @@
                     </div>
 
                     <div class="form-group">
+                        <label asp-for="InstituteName"></label>
+                        <input asp-for="InstituteName" class="form-control" placeholder="Institute name shown on the card">
+                        <span asp-validation-for="InstituteName" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
                         <label>Current Front Image</label>
                         <div>
                              <img src="@Model.FrontBgPath" class="img-thumbnail" style="max-height: 100px;">

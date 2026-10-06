@@ -158,6 +158,17 @@ DocProject/Help/html
 # Click-Once directory
 publish/
 
+# Build logs
+build_log.txt
+msbuild.log
+
+# Production config contains real connection strings/passwords.
+# Use user-secrets (Development) or environment variables (Production) instead.
+IDCardBD.Web/appsettings.Production.json
+
+# Runtime user uploads (profile photos, template backgrounds)
+IDCardBD.Web/wwwroot/uploads/
+
 # Publish Web Output
 *.[Pp]ublish.xml
 *.azurePubxml
